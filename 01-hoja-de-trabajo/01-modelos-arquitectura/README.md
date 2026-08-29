@@ -51,7 +51,19 @@ Infraestructura principal en **GCP región us-central1**, con dependencias puntu
 
 ---
 
+## Qué exige el curso para esta sección
+
+> Guía tomada de la sesión en vivo de la semana 4 (`utils/MISW4501-202614-S4C1-es-ES.vtt`) y del resumen de esa misma semana (`utils/subtitle (31).txt`).
+
+- El mínimo exigido son **tres vistas**: funcional (modelos de componentes — ya cubierta por `4.1`), de despliegue (ya cubierta por `4.2`) y **de información** (modelos de datos, flujos de datos, decisiones de particionamiento/replicación).
+  - La vista de información **no es lo mismo** que la capa de datos dibujada dentro del diagrama de componentes: debe explicar explícitamente decisiones como el escritor único + réplica de lectura en Riesgo, o por qué Identidad/Pólizas usan PostgreSQL relacional mientras Riesgo/Siniestros usan MongoDB documental.
+  - "Esos son los mínimos, no se limiten": si se necesitan más vistas para explicar un ASR (Architecturally Significant Requirement), se deben agregar — no hay techo.
+- Cada modelo debe ir acompañado del **razonamiento** (por qué este estilo, por qué esta decisión) — el modelo solo no basta para la nota; ese razonamiento es justamente lo que se explica en el [video de evidencias](../../04-video-evidencias/).
+- Esta arquitectura **no es desechable**: es la misma que se implementará en el Proyecto Final II (solo se permiten ajustes menores), así que debe quedar en su "mejor versión", no en el mínimo viable.
+
 ## Pendiente por verificar
 
-- [ ] Confirmar contra el enunciado del curso si se exige alguna vista adicional (p. ej. vista de procesos, vista de desarrollo, diagrama de contenedores C4 Nivel 2) que hoy no está cubierta por estos tres artefactos.
+- [ ] Elaborar la **vista de información** (modelos de datos + flujos + decisiones de particionamiento/replicación) — hoy no existe como artefacto propio, solo está implícita en la capa 4 del diagrama de componentes.
+- [ ] Para cada modelo, redactar (aquí o en el guion del video) el razonamiento de por qué se tomó esa decisión de vista/estilo.
+- [ ] Confirmar contra el enunciado específico de esta entrega si se exige alguna vista adicional (p. ej. vista de procesos, vista de desarrollo, diagrama de contenedores C4 Nivel 2).
 - [ ] Revisar consistencia de nombres entre las tres vistas (algunos componentes cambian de nombre entre el diagrama de componentes y el de despliegue, p. ej. "Cotización y Rating Actuarial" vs. `CR_RATING`).
