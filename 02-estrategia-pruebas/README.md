@@ -1,6 +1,6 @@
 # 2. Refinamiento estrategia de pruebas (2 pts)
 
-> ⚠️ **Supuesto a validar por el equipo**: este repositorio no contiene la estrategia de pruebas de la entrega anterior — el backlog real de Jira (`utils/Jira.xml`) sí llegó y se usó para anclar cada técnica de prueba a una historia y criterio de aceptación real (citados como `KAN-XX` abajo), pero no incluye el documento de estrategia de pruebas en sí. Por eso este documento **no puede presentarse como un diff contra esa versión** — en su lugar, desarrolla la estrategia al nivel de detalle que ya permiten la arquitectura y el backlog de esta semana, organizada explícitamente como *qué se agrega/detalla*. **Antes de entregar: pegar aquí el documento previo y fusionar esta sección como una actualización real sobre él**, no como un reemplazo.
+> ℹ️ **Nota de alcance**: "Refinamiento" es el nombre que el rubric del curso le da a esta línea todas las semanas (porque en semanas futuras sí se vuelve a revisar) — **no implica que deba existir obligatoriamente una entrega previa de estrategia de pruebas**. El equipo confirmó que no hay una versión anterior formal. Este documento es entonces la **v1.0**: la primera versión formal de la estrategia de pruebas de Solventa, con el nivel de detalle que ya permite la arquitectura de esta semana (1.1, 1.2, 1.3). Queda lista para entregar tal cual — no depende de localizar ningún archivo previo. Si en una semana futura aparece contenido de pruebas de una entrega anterior a esta, se puede fusionar entonces contra esta v1.0.
 
 ## Qué exige el curso para esta sección
 
@@ -12,9 +12,9 @@
 
 ---
 
-## Qué cambió esta semana y qué implica para las pruebas
+## Qué hizo posible este nivel de detalle
 
-La arquitectura de esta semana ([1.1](../01-hoja-de-trabajo/01-modelos-arquitectura/), [1.2](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/), [1.3](../01-hoja-de-trabajo/03-diseno-experimento-arquitectura/)) hizo explícitos varios elementos que antes de esta entrega probablemente no estaban lo suficientemente detallados como para diseñar pruebas específicas:
+Al definir el backlog y los atributos de calidad (semanas anteriores) todavía no existían decisiones de arquitectura concretas sobre las que diseñar pruebas específicas — solo se sabía *qué* debía cumplirse (los 6 atributos de calidad del caso), no *cómo* se iba a construir. La arquitectura de esta semana ([1.1](../01-hoja-de-trabajo/01-modelos-arquitectura/), [1.2](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/), [1.3](../01-hoja-de-trabajo/03-diseno-experimento-arquitectura/)) hizo explícitos los elementos que ahora sí se pueden probar de forma concreta:
 
 | Elemento nuevo/detallado | Qué prueba faltaba antes de esta semana |
 |---|---|
@@ -36,21 +36,16 @@ La arquitectura de esta semana ([1.1](../01-hoja-de-trabajo/01-modelos-arquitect
 - **Biometría/dispositivo** (**KAN-31** onboarding, **KAN-32** autenticación nativa): pruebas de que la biometría se valida contra el hardware seguro del teléfono (Keystore/Keychain) y no se transmite el dato biométrico crudo fuera del dispositivo — relevante porque un fallo aquí es un incidente de seguridad, no solo un bug funcional.
 - **Móvil** (marcado explícitamente por el curso como fuente de retraso): sincronización offline de la Billetera de Pólizas ante pérdida y recuperación de conectividad (**KAN-33**), y pruebas en dispositivo/emulador real (no solo simulador) para cámara + GPS embebido en evidencia de siniestros (**KAN-35**) y geolocalización de prestadores (**KAN-36**).
 
-## Registro de cambios respecto a la versión anterior
+## Historial de versiones
 
-_Pendiente de completar por el equipo una vez se localice el documento de la entrega anterior — plantilla lista para usar:_
-
-| Se agrega | Se cambia | Se elimina |
+| Versión | Semana | Qué se agregó |
 |---|---|---|
-| Pruebas de contrato de eventos (Event Bus) | _(completar)_ | _(completar)_ |
-| Pruebas de resiliencia del Circuit Breaker (reutilizando Experimento 1) | | |
-| Pruebas de staleness de la réplica de Riesgo (reutilizando Experimento 2) | | |
-| Pruebas de aislamiento de red de la subnet de datos vía IaC | | |
+| **v1.0** (esta entrega) | Semana 4-5 | Primera versión formal: niveles y técnicas de prueba ligados a los patrones de [1.2](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) y a los 2 experimentos de [1.3](../01-hoja-de-trabajo/03-diseno-experimento-arquitectura/). |
+| v1.1 (próxima refinamiento) | — | _(a completar la próxima vez que se revise esta estrategia — qué se agrega/cambia/elimina respecto a v1.0)_ |
 
 ## Checklist
 
-- [ ] **Ubicar la estrategia de pruebas de la entrega anterior y fusionarla con este documento** (ver nota de supuesto al inicio)
-- [x] Identificar qué cambió en la arquitectura esta semana y qué implica para las pruebas
-- [x] Definir niveles y técnicas de prueba refinados, ligados a los patrones/tácticas de [1.2](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) y a los experimentos de [1.3](../01-hoja-de-trabajo/03-diseno-experimento-arquitectura/)
-- [ ] Completar la tabla de "se agrega / se cambia / se elimina" contra la versión real anterior
+- [x] Identificar qué elementos de la arquitectura de esta semana requieren pruebas específicas
+- [x] Definir niveles y técnicas de prueba, ligados a los patrones/tácticas de [1.2](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) y a los experimentos de [1.3](../01-hoja-de-trabajo/03-diseno-experimento-arquitectura/)
+- [x] Documento listo como v1.0 — no depende de ninguna entrega anterior
 - [ ] Verificar que el refinamiento quede también mencionado en el [video de evidencias](../04-video-evidencias/)

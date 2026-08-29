@@ -12,8 +12,6 @@ _Última actualización: 2026-08-29_
 - [ ] `[1.3]` Ejecutar el Experimento 1 (Circuit Breaker/Retry en ACL Workers) en semanas 6-7 y completar resultados
 - [ ] `[1.3]` Ejecutar el Experimento 2 (lag de réplica de lectura en Riesgo) en semanas 6-7 y completar resultados
 - [ ] `[1.3]` Evaluar si hay margen para levantar el candidato descartado (Saga de indemnización paramétrica) como 3er experimento
-- [ ] `[2]` **Ubicar la estrategia de pruebas de la entrega anterior y fusionarla con el refinamiento ya redactado** (no está en este repo)
-- [ ] `[2]` Completar la tabla "se agrega/cambia/elimina" contra la versión real anterior
 - [ ] `[3]` Formalizar la metodología de priorización (Value vs. Risk Score: valor de negocio, riesgo regulatorio, dependencia técnica) como documento explícito en el backlog — corrige el 0/10 del tutor en "metodología de priorización no clara"
 - [ ] `[4]` Grabar el video explicando el razonamiento (no solo mostrar los modelos) y editarlo
 
@@ -49,6 +47,7 @@ _(vacío)_
 - [x] `[1.3]` Documentar candidatos descartados y el criterio de estimación (Saga, región/zona GCP)
 - [x] `[2]` Identificar impacto de los cambios de arquitectura de esta semana sobre las pruebas (tabla de elementos nuevos → prueba requerida)
 - [x] `[2]` Definir niveles/técnicas de prueba refinados (contrato de eventos, resiliencia reutilizando Experimento 1, staleness reutilizando Experimento 2, seguridad de infraestructura, móvil)
+- [x] `[2]` Aclarar con el equipo que no existe entrega previa de estrategia de pruebas — el documento queda como v1.0, sin depender de fusionar nada
 - [x] `[1.2]` `[1.3]` `[2]` `[4]` Enriquecer checklists de las secciones pendientes con la guía metodológica oficial del curso (`utils/`)
 - [x] `[3]` Crear estructura de carpetas alineada al rubric de la entrega
 - [x] `[3]` Crear tablero base de seguimiento
@@ -62,6 +61,6 @@ _(vacío)_
 | 1.1 Modelos de arquitectura | 5 | 5 | 100% |
 | 1.2 Diseño detallado | 7 | 6 | 86% |
 | 1.3 Diseño del experimento | 11 | 8 | 73% |
-| 2 Estrategia de pruebas | 4 | 2 | 50% |
+| 2 Estrategia de pruebas | 4 | 3 | 75% |
 | 3 Plan de trabajo y tablero | 2 | 2 | 100% |
 | 4 Video con evidencias | 1 | 0 | 0% |

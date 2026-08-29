@@ -10,7 +10,7 @@ Repositorio de la entrega de arquitectura del proyecto **Solventa** (sistema de 
 | 1.1 | — Modelos de arquitectura | 20 | [`01-hoja-de-trabajo/01-modelos-arquitectura/`](01-hoja-de-trabajo/01-modelos-arquitectura/) | 🟢 Completo (4 vistas + razonamiento) |
 | 1.2 | — Diseño detallado de arquitectura | 30 | [`01-hoja-de-trabajo/02-diseno-detallado-arquitectura/`](01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) | 🟢 Completo, ASR trazados al backlog real de Jira |
 | 1.3 | — Diseño del experimento de arquitectura | 28 | [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/) | 🟡 2 experimentos diseñados y motivados por historias reales, falta ejecutar |
-| 2 | Refinamiento estrategia de pruebas | 2 | [`02-estrategia-pruebas/`](02-estrategia-pruebas/) | 🟡 Redactado, falta fusionar con versión anterior |
+| 2 | Refinamiento estrategia de pruebas | 2 | [`02-estrategia-pruebas/`](02-estrategia-pruebas/) | 🟢 Completo (v1.0 — no había entrega previa que fusionar) |
 | 3 | Plan de trabajo y tablero (actualización) | 10 | [`03-plan-trabajo-tablero/`](03-plan-trabajo-tablero/) | 🟢 Tablero base creado |
 | 4 | Video con evidencias | 10 | [`04-video-evidencias/`](04-video-evidencias/) | 🔴 Pendiente (guion listo) |
 
