@@ -7,7 +7,7 @@ Repositorio de la entrega de arquitectura del proyecto **Solventa** (sistema de 
 | # | Entregable | Puntos | Carpeta | Estado |
 |---|---|---|---|---|
 | 1 | **Hoja de trabajo**: modelos, patrones detallados y experimento | **78** | [`01-hoja-de-trabajo/`](01-hoja-de-trabajo/) | 🟡 En progreso |
-| 1.1 | — Modelos de arquitectura | 20 | [`01-hoja-de-trabajo/01-modelos-arquitectura/`](01-hoja-de-trabajo/01-modelos-arquitectura/) | 🟢 Insumos organizados |
+| 1.1 | — Modelos de arquitectura | 20 | [`01-hoja-de-trabajo/01-modelos-arquitectura/`](01-hoja-de-trabajo/01-modelos-arquitectura/) | 🟢 Completo (4 vistas + razonamiento) |
 | 1.2 | — Diseño detallado de arquitectura | 30 | [`01-hoja-de-trabajo/02-diseno-detallado-arquitectura/`](01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) | 🟡 Borrador redactado, falta validar ASR |
 | 1.3 | — Diseño del experimento de arquitectura | 28 | [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/) | 🟡 2 experimentos diseñados, falta ejecutar |
 | 2 | Refinamiento estrategia de pruebas | 2 | [`02-estrategia-pruebas/`](02-estrategia-pruebas/) | 🟡 Redactado, falta fusionar con versión anterior |
@@ -25,6 +25,15 @@ Se reestructuraron los tres artefactos que ya existían en el repositorio (suelt
 - `4.2.Diagrama_Despliegue.drawio` — Diagrama de despliegue en GCP/AWS (draw.io).
 
 Cada carpeta pendiente tiene un `README.md` con el checklist de lo que falta por completar, para que el contenido nuevo se redacte directamente ahí en la misma estructura.
+
+Sobre esa base ya se redactó contenido real de Solventa (no solo checklists) en:
+
+- **1.1** — se completó la única vista mínima que faltaba: `3.Vista_Informacion.puml` (entidades por almacén, propiedad de datos, decisiones de replicación), más el razonamiento de cada vista y una tabla de consistencia de nombres.
+- **1.2** — catálogo de 9 patrones, tácticas por atributo de calidad, 5 ADRs y trazabilidad a ASR (ver supuesto documentado ahí).
+- **1.3** — 2 experimentos de arquitectura completos (Circuit Breaker en ACL Workers; lag de réplica de lectura en Riesgo), con estructura de 9 puntos cada uno.
+- **2** — refinamiento de la estrategia de pruebas ligado a los patrones/experimentos anteriores (ver supuesto: falta fusionar con la versión previa real, que no está en este repo).
+
+Quedan pendientes de esta pasada: cerrar los supuestos marcados con ⚠️ en 1.2/1.3/2 (requieren información que solo tiene el equipo — backlog real de ASR, nombres del equipo, documento de pruebas anterior), y el guion/grabación del video (sección 4).
 
 ## Guía metodológica
 

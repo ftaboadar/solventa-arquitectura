@@ -1,0 +1,138 @@
+@startuml Vista_Informacion_Solventa
+
+left to right direction
+skinparam backgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 10
+skinparam ArrowFontColor #333333
+skinparam defaultFontSize 11
+
+skinparam rectangle {
+    FontSize 10
+    BackgroundColor<<servicio>> #1565C0
+    BorderColor<<servicio>>     #0D47A1
+    FontColor<<servicio>>       #FFFFFF
+}
+
+skinparam database {
+    FontSize 11
+    BackgroundColor<<postgres>> #ECEFF1
+    BorderColor<<postgres>>     #546E7A
+    FontColor<<postgres>>       #263238
+    BackgroundColor<<mongo>>    #E8F5E9
+    BorderColor<<mongo>>        #2E7D32
+    FontColor<<mongo>>          #1B5E20
+    BackgroundColor<<cache>>    #FFF3E0
+    BorderColor<<cache>>        #E65100
+    FontColor<<cache>>          #BF360C
+    BackgroundColor<<blob>>     #ECEFF1
+    BorderColor<<blob>>         #546E7A
+    FontColor<<blob>>           #263238
+    BackgroundColor<<lake>>     #F3E5F5
+    BorderColor<<lake>>         #6A1B9A
+    FontColor<<lake>>           #4A148C
+}
+
+' ============================================================
+' SERVICIOS (escritores/lectores) — mismos nombres que 4.1/4.2
+' ============================================================
+rectangle "AUTH\n(Identidad y Consentimiento)" as AUTH <<servicio>>
+rectangle "RISK\n(Riesgo y Perfilamiento)" as RISK <<servicio>>
+rectangle "RATING\n(Cotización y Rating)" as RATING <<servicio>>
+rectangle "UNDER\n(Suscripción y Decisión)" as UNDER <<servicio>>
+rectangle "POLICY\n(Gestión de Pólizas)" as POLICY <<servicio>>
+rectangle "CLAIMS\n(Siniestros y Peritaje)" as CLAIMS <<servicio>>
+rectangle "PAYMENTS\n(Pagos e Idempotencia)" as PAYMENTS <<servicio>>
+rectangle "Event Bus\n(Pub/Sub)" as BUS <<servicio>>
+
+' ============================================================
+' ALMACENES DE DATOS Y SUS ENTIDADES
+' ============================================================
+database "PostgreSQL — Identidad" as PG_ID <<postgres>> {
+  entity Usuario
+  entity Consentimiento
+  entity SesionAuth
+}
+
+database "MongoDB — Riesgo (Primaria)\nEscritor único: RISK" as MG_RISK_W <<mongo>> {
+  entity PerfilRiesgo
+  entity SenalOpenFinance
+  entity SenalIoT
+}
+
+database "MongoDB — Riesgo (Réplica lectura)\nConsistencia eventual" as MG_RISK_R <<mongo>> {
+  entity PerfilRiesgo_RO
+  entity ScorePrecalculado
+}
+
+database "PostgreSQL — Pólizas y Pagos" as PG_POL <<postgres>> {
+  entity Poliza
+  entity Cobertura
+  entity Pago
+  entity Recibo
+}
+
+database "MongoDB — Siniestros" as MG_CLAIM <<mongo>> {
+  entity Siniestro
+  entity EvidenciaMetadata
+}
+
+database "GCS/S3 — Multimedia" as BLOB <<blob>> {
+  entity ArchivoMultimedia
+}
+
+database "Redis — Caché (derivada, TTL)" as REDIS <<cache>> {
+  entity TokenSesion
+  entity ScoreCacheado
+  entity CatalogoRapido
+}
+
+database "Data Lake / BigQuery\n(histórico, append-only)" as LAKE <<lake>> {
+  entity EventoHistorico
+}
+
+' ============================================================
+' RELACIONES — escritura / lectura / replicación
+' ============================================================
+AUTH -down-> PG_ID : escribe/lee (ACID)
+AUTH -right-> REDIS : escribe TokenSesion
+
+RISK -down-> MG_RISK_W : único escritor
+MG_RISK_W .down.> MG_RISK_R : replicación asíncrona\n(consistencia eventual)
+RISK -right-> REDIS : precalcula ScoreCacheado
+
+RATING -up-> MG_RISK_R : solo lectura
+RATING -right-> REDIS : lee CatalogoRapido / ScoreCacheado
+
+UNDER -up-> MG_RISK_R : consulta score
+UNDER .up.> MG_RISK_W : registra decisión (vía RISK)
+
+POLICY -down-> PG_POL : escribe/lee (ACID)
+PAYMENTS -down-> PG_POL : escribe/lee (ACID)
+
+CLAIMS -down-> MG_CLAIM : único escritor
+CLAIMS -right-> BLOB : sube/lee evidencia
+
+BUS .down.> LAKE : persiste eventos\n(async, append-only)
+AUTH .right.> BUS : UserRegistered / DocUploaded
+POLICY .right.> BUS : PolicyIssued
+CLAIMS .right.> BUS : ClaimApproved / DocUploaded
+PAYMENTS .right.> BUS : PaymentConfirmed
+
+' ============================================================
+' LEYENDA
+' ============================================================
+legend bottom
+  <u><b>Convenciones de la Vista de Información</b></u>
+  |= Elemento |= Significado |
+  |Rectángulo azul | Servicio/microservicio (escritor o lector) |
+  |Cilindro gris (PostgreSQL) | Almacén relacional, transaccional ACID |
+  |Cilindro verde (MongoDB) | Almacén documental, particionado por dominio |
+  |Cilindro naranja (Redis) | Caché derivada — reconstruible, no es fuente de verdad |
+  |Cilindro gris (GCS/S3) | Almacenamiento binario/multimedia |
+  |Cilindro morado (Data Lake) | Histórico analítico, alimentado async, append-only |
+  |──► Flecha continua | Acceso síncrono (lectura o escritura) |
+  |- -► Flecha punteada | Replicación o propagación asíncrona (eventual) |
+endlegend
+
+@enduml

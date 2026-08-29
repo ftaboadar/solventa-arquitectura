@@ -6,10 +6,6 @@ _Última actualización: 2026-08-29_
 
 ## Backlog
 
-- [ ] `[1.1]` Elaborar la vista de información (modelos de datos, flujos, particionamiento/replicación) — vista mínima exigida que aún no existe como artefacto propio
-- [ ] `[1.1]` Redactar el razonamiento (por qué este estilo/decisión) de cada vista existente
-- [ ] `[1.1]` Confirmar contra el enunciado del curso si falta alguna vista adicional (procesos, desarrollo, C4 Nivel 2)
-- [ ] `[1.1]` Revisar consistencia de nombres de componentes entre diagrama de componentes y de despliegue
 - [ ] `[1.2]` **Validar la trazabilidad patrón/táctica → ASR contra el backlog real de atributos de calidad del equipo** (la versión actual usa ASR inferidos del dominio, marcados como supuesto)
 - [ ] `[1.2]` Decidir si el Circuit Breaker/Retry y la revisión de la Saga se incorporan formalmente al diagrama de componentes (`4.1`)
 - [ ] `[1.3]` **Reemplazar los roles genéricos (Integrante A/B/C/D) por los nombres reales del equipo** en la distribución de actividades de los 2 experimentos
@@ -33,6 +29,11 @@ _(vacío)_
 
 - [x] `[1.1]` Reorganizar diagramas existentes en carpeta `01-modelos-arquitectura/`
 - [x] `[1.1]` Documentar contenido de los 3 modelos existentes (contexto, componentes, despliegue)
+- [x] `[1.1]` Elaborar la vista de información (`3.Vista_Informacion.puml`) — entidades, propiedad de datos y decisiones de replicación por almacén
+- [x] `[1.1]` Redactar el razonamiento de cada vista (por qué contexto, por qué capas, por qué esta topología de despliegue, por qué esta vista de información)
+- [x] `[1.1]` Resolver si falta alguna vista adicional (no obligatoria; candidata puntual: vista de procesos para la Saga)
+- [x] `[1.1]` Tabla de consistencia de nombres entre vistas (negocio ↔ identificador técnico)
+- [x] `[1.1]` Renderizar y revisar visualmente `3.Vista_Informacion.puml` (con PlantUML `-charset UTF-8`)
 - [x] `[1.2]` Redactar catálogo de patrones (9 patrones) con problema, ubicación en Solventa y alternativas descartadas
 - [x] `[1.2]` Documentar tácticas por atributo de calidad (disponibilidad, rendimiento, escalabilidad, seguridad, interoperabilidad, auditabilidad, consistencia)
 - [x] `[1.2]` Redactar 5 ADRs de las decisiones clave de arquitectura
@@ -52,7 +53,7 @@ _(vacío)_
 
 | Sección | Tareas totales | Hechas | % |
 |---|---|---|---|
-| 1.1 Modelos de arquitectura | 6 | 2 | 33% |
+| 1.1 Modelos de arquitectura | 5 | 5 | 100% |
 | 1.2 Diseño detallado | 6 | 4 | 67% |
 | 1.3 Diseño del experimento | 5 | 3 | 60% |
 | 2 Estrategia de pruebas | 4 | 2 | 50% |
