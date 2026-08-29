@@ -24,17 +24,17 @@ La sección 2.8 del documento original ya declaraba este riesgo explícitamente:
 
 Este número queda propuesto por el equipo (no viene del enunciado oficial del caso, que no cubre FC-02 explícitamente); debe ratificarse con quien lidera pruebas antes de usarse como criterio de aceptación.
 
-## 2. Componentes reales que el v1.0.0 usa y que no están en `4.1`/`4.2`
+## 2. Componentes reales que el v1.0.0 usa y que no estaban en `4.1`/`4.2` — ✅ ya agregados
 
-El documento de pruebas referencia 3 componentes que no aparecen en nuestros diagramas de arquitectura:
+El documento de pruebas referencia 3 componentes que no aparecían en los diagramas de arquitectura. Ya se incorporaron a `4.1.Diagrama_Componentes.drawio` esta semana:
 
 | Componente (v1.0.0) | Funcionalidad que cubre | Estado en `4.1`/`4.2` |
 |---|---|---|
-| `EXPLAIN` (Explicabilidad y Linaje de Decisión) | FC-02 | ❌ No está dibujado — hoy solo existe `AUDIT` (Auditoría Inmutable), que es el almacén, no el servicio de consulta/reconstrucción de linaje |
-| `OFFLINE_STORE` (Almacén Local Cifrado) | FC-04 (Billetera offline-first), FC-17 (Reporte de siniestro con conectividad parcial) | ❌ No está dibujado — el móvil aparece en `4.1` pero sin un componente explícito de almacenamiento local cifrado |
-| `MAPS` (Mapas y Red de Prestadores) | FC-20 (Geolocalización de prestadores) | ❌ No está dibujado — no hay integración externa de mapas en `4.1`/`4.2` |
+| `EXPLAIN` (Explicabilidad y Linaje de Decisión) | FC-02 | ✅ Agregado en Capa 5 (Servicios Transversales), junto a `AUDIT`, con conector "Reconstruye Linaje" |
+| `OFFLINE_STORE` (Almacén Local Cifrado) | FC-04 (Billetera offline-first), FC-17 (Reporte de siniestro con conectividad parcial) | ✅ Agregado dentro del módulo App Móvil, conectado a Billetera de Pólizas y a Siniestros (Cámara/Geo) |
+| `MAPS` (Mapas y Red de Prestadores) | FC-20 (Geolocalización de prestadores) | ✅ Agregado en Capa 7 (Integraciones Externas), conectado vía ACL Workers |
 
-**Esto no lo resuelvo yo solo** porque tocar el diagrama de componentes es una decisión de arquitectura, no solo de pruebas — dejo la recomendación en el tablero para que el equipo decida si los agrega esta semana o la siguiente.
+Detalle completo en [1.1 §2](../01-hoja-de-trabajo/01-modelos-arquitectura/#2-diagrama-de-componentes-y-conectores) y en la [tabla de consistencia de nombres](../01-hoja-de-trabajo/01-modelos-arquitectura/#consistencia-de-nombres-entre-vistas).
 
 ## 3. Extensión de la matriz TNT con lo nuevo de 1.2/1.3
 
@@ -58,7 +58,7 @@ El v1.0.0 (sección 2.4.1) ya cubre resiliencia de forma parcial dentro de FC-06
 - [x] Ubicar y leer la estrategia de pruebas real de la entrega anterior (`Solventa_Estrategia_Pruebas.pdf`, v1.0.0)
 - [x] Cerrar el riesgo que el propio documento dejó abierto (presupuesto de latencia de FC-02/EXPLAIN)
 - [x] Identificar componentes reales (`EXPLAIN`, `OFFLINE_STORE`, `MAPS`) ausentes en los diagramas `4.1`/`4.2`
+- [x] Agregar `EXPLAIN`, `OFFLINE_STORE`, `MAPS` a `4.1.Diagrama_Componentes.drawio`, validado sin colisiones geométricas ni referencias rotas
 - [x] Extender la matriz TNT con lo nuevo de esta semana (Circuit Breaker formalizado, consistencia eventual, Saga)
-- [ ] **Decisión del equipo**: ¿se agregan `EXPLAIN`, `OFFLINE_STORE`, `MAPS` a `4.1`/`4.2` esta semana o la siguiente?
 - [ ] Ratificar el presupuesto de latencia propuesto para FC-02 (p95 ≤ 800 ms / p99 ≤ 1.5 s) con quien lidera pruebas
 - [ ] Verificar que el refinamiento quede también mencionado en el [video de evidencias](../04-video-evidencias/)
