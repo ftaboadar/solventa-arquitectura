@@ -14,6 +14,7 @@ _Última actualización: 2026-08-29_
 - [ ] `[1.3]` Evaluar si hay margen para levantar el candidato descartado (Saga de indemnización paramétrica) como 3er experimento
 - [ ] `[2]` **Ubicar la estrategia de pruebas de la entrega anterior y fusionarla con el refinamiento ya redactado** (no está en este repo)
 - [ ] `[2]` Completar la tabla "se agrega/cambia/elimina" contra la versión real anterior
+- [ ] `[3]` Formalizar la metodología de priorización (Value vs. Risk Score: valor de negocio, riesgo regulatorio, dependencia técnica) como documento explícito en el backlog — corrige el 0/10 del tutor en "metodología de priorización no clara"
 - [ ] `[4]` Grabar el video explicando el razonamiento (no solo mostrar los modelos) y editarlo
 
 ## En progreso
@@ -39,6 +40,7 @@ _(vacío)_
 - [x] `[1.2]` Trazar patrones/tácticas a ASR inferidos (pendiente de validar contra backlog real del equipo)
 - [x] `[1.2]` `[1.1]` Formalizar el Circuit Breaker/Retry en `4.1.Diagrama_Componentes.drawio` (bloque ACL Workers)
 - [x] `[1.2]` Reconstruir la trazabilidad ASR con el backlog real de Jira (`utils/Jira.xml`, 13 historias, proyecto KAN) — cada táctica cita la historia (`KAN-XX`), prioridad y puntos que la motivan
+- [x] `[1.2]` Corregir los 5 Escenarios de Calidad observados por el tutor (EC009, EC010, EC013, EC014, EC015, EC018) — aplicado por el equipo en Jira, registrado en [`correcciones-tutor-EdeC.md`](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/correcciones-tutor-EdeC.md)
 - [x] `[1.3]` Asignar los 2 nombres reales del backlog (Frans Taboada, Daniel Felipe Urrego) a los roles de los experimentos con relación directa a su historia motivadora
 - [x] `[2]` Anclar las técnicas de prueba a criterios de aceptación reales del backlog (no repudio, PCI-DSS, biometría en Keystore/Keychain, sync offline, GPS embebido)
 - [x] `[1.3]` Diseñar Experimento 1: Circuit Breaker/Retry en ACL Workers (estructura completa de 9 puntos)
