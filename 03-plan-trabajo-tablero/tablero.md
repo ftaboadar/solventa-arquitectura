@@ -13,6 +13,8 @@ _Última actualización: 2026-08-29_
 - [ ] `[1.3]` Ejecutar el Experimento 2 (lag de réplica de lectura en Riesgo) en semanas 6-7 y completar resultados
 - [ ] `[1.3]` Evaluar si hay margen para levantar el candidato descartado (Saga de indemnización paramétrica) como 3er experimento
 - [ ] `[3]` Formalizar la metodología de priorización (Value vs. Risk Score: valor de negocio, riesgo regulatorio, dependencia técnica) como documento explícito en el backlog — corrige el 0/10 del tutor en "metodología de priorización no clara"
+- [ ] `[1.1]` **Decidir si se agregan `EXPLAIN`, `OFFLINE_STORE`, `MAPS` a los diagramas `4.1`/`4.2`** — son componentes reales usados en `Solventa_Estrategia_Pruebas.pdf` (FC-02, FC-04/17, FC-20) que hoy no están dibujados
+- [ ] `[2]` Ratificar con quien lidera pruebas el presupuesto de latencia propuesto para FC-02/EXPLAIN
 - [ ] `[4]` Grabar el video explicando el razonamiento (no solo mostrar los modelos) y editarlo
 
 ## En progreso
@@ -47,7 +49,8 @@ _(vacío)_
 - [x] `[1.3]` Documentar candidatos descartados y el criterio de estimación (Saga, región/zona GCP)
 - [x] `[2]` Identificar impacto de los cambios de arquitectura de esta semana sobre las pruebas (tabla de elementos nuevos → prueba requerida)
 - [x] `[2]` Definir niveles/técnicas de prueba refinados (contrato de eventos, resiliencia reutilizando Experimento 1, staleness reutilizando Experimento 2, seguridad de infraestructura, móvil)
-- [x] `[2]` Aclarar con el equipo que no existe entrega previa de estrategia de pruebas — el documento queda como v1.0, sin depender de fusionar nada
+- [x] `[2]` Ubicar y leer la estrategia de pruebas real v1.0.0 (`Solventa_Estrategia_Pruebas.pdf`, 31 páginas, FC-01–FC-20) y refinarla como addendum sobre ella, no como reemplazo
+- [x] `[2]` Cerrar el riesgo que el propio v1.0.0 dejó abierto: presupuesto de latencia de FC-02/EXPLAIN (propuesto: p95≤800ms/p99≤1.5s, pendiente de ratificar)
 - [x] `[1.2]` `[1.3]` `[2]` `[4]` Enriquecer checklists de las secciones pendientes con la guía metodológica oficial del curso (`utils/`)
 - [x] `[3]` Crear estructura de carpetas alineada al rubric de la entrega
 - [x] `[3]` Crear tablero base de seguimiento
@@ -61,6 +64,6 @@ _(vacío)_
 | 1.1 Modelos de arquitectura | 5 | 5 | 100% |
 | 1.2 Diseño detallado | 7 | 6 | 86% |
 | 1.3 Diseño del experimento | 11 | 8 | 73% |
-| 2 Estrategia de pruebas | 4 | 3 | 75% |
+| 2 Estrategia de pruebas | 7 | 4 | 57% |
 | 3 Plan de trabajo y tablero | 2 | 2 | 100% |
 | 4 Video con evidencias | 1 | 0 | 0% |
