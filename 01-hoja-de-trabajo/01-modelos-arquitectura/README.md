@@ -7,7 +7,7 @@ Cuatro vistas del sistema **Solventa**, organizadas de lo general a lo específi
 | Archivo | Vista | Herramienta |
 |---|---|---|
 | [`1.Diagrama_Contexto.puml`](1.Diagrama_Contexto.puml) | Contexto del sistema (C4 Nivel 1) | PlantUML |
-| [`4.1.Diagrama_Componentes.drawio`](4.1.Diagrama_Componentes.drawio) | Componentes y conectores (vista funcional) | draw.io |
+| [`4.1.Diagrama_Componentes.drawio`](4.1.Diagrama_Componentes.drawio) | Componentes y conectores (vista funcional) — incluye Circuit Breaker/Retry en ACL | draw.io |
 | [`4.2.Diagrama_Despliegue.drawio`](4.2.Diagrama_Despliegue.drawio) | Despliegue en infraestructura | draw.io |
 | [`3.Vista_Informacion.puml`](3.Vista_Informacion.puml) | Información: entidades, propiedad de datos, replicación | PlantUML |
 

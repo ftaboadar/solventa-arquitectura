@@ -8,7 +8,7 @@ Repositorio de la entrega de arquitectura del proyecto **Solventa** (sistema de 
 |---|---|---|---|---|
 | 1 | **Hoja de trabajo**: modelos, patrones detallados y experimento | **78** | [`01-hoja-de-trabajo/`](01-hoja-de-trabajo/) | 🟡 En progreso |
 | 1.1 | — Modelos de arquitectura | 20 | [`01-hoja-de-trabajo/01-modelos-arquitectura/`](01-hoja-de-trabajo/01-modelos-arquitectura/) | 🟢 Completo (4 vistas + razonamiento) |
-| 1.2 | — Diseño detallado de arquitectura | 30 | [`01-hoja-de-trabajo/02-diseno-detallado-arquitectura/`](01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) | 🟡 Borrador redactado, falta validar ASR |
+| 1.2 | — Diseño detallado de arquitectura | 30 | [`01-hoja-de-trabajo/02-diseno-detallado-arquitectura/`](01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) | 🟡 Redactado + CB formalizado en diagrama, falta validar ASR |
 | 1.3 | — Diseño del experimento de arquitectura | 28 | [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/) | 🟡 2 experimentos diseñados, falta ejecutar |
 | 2 | Refinamiento estrategia de pruebas | 2 | [`02-estrategia-pruebas/`](02-estrategia-pruebas/) | 🟡 Redactado, falta fusionar con versión anterior |
 | 3 | Plan de trabajo y tablero (actualización) | 10 | [`03-plan-trabajo-tablero/`](03-plan-trabajo-tablero/) | 🟢 Tablero base creado |

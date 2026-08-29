@@ -57,7 +57,7 @@ Solventa adopta un **estilo de microservicios orientado a dominio**, organizado 
 
 - **Problema que resuelve**: los proveedores externos (KYC, pasarela de pago, firma electrónica, reaseguradoras) están fuera del control de Solventa y pueden fallar o degradarse; sin aislamiento, una falla de KYC podría tumbar todo el flujo de onboarding/suscripción.
 - **Dónde se aplica**: se propone formalizar esta táctica dentro de los `Workers y Adaptadores (ACL)` (capa 6 de `4.1` / `CR_ACL` en `4.2`), que ya son el único punto por donde pasa el tráfico saliente hacia KYC, Open Finance, pasarela de pago, firma electrónica y ACORD.
-- **Estado actual en los diagramas**: el diagrama de componentes muestra la comunicación (`REST KYC`, `REST Open Finance`, `REST Pasarela`, etc.) pero **no representa explícitamente** el circuit breaker/retry — queda como refinamiento a incorporar en el diagrama de componentes y a validar como candidato de [experimento de arquitectura](../03-diseno-experimento-arquitectura/).
+- **Estado actual en los diagramas**: ya formalizado en `4.1.Diagrama_Componentes.drawio` — el bloque `Workers y Adaptadores (ACL)` incluye ahora la etiqueta "Circuit Breaker + Retry (aislamiento de fallas externas)" junto a `REST KYC`, `REST Open Finance`, `REST Pasarela`, etc. Se valida en detalle en el [Experimento 1](../03-diseno-experimento-arquitectura/#experimento-1--aislamiento-de-fallas-externas-vía-circuit-breaker--retry-en-acl-workers) de la sección 1.3.
 - **Alternativa descartada**: reintentos ilimitados sin corte (retry infinito). Se descarta porque ante una caída prolongada de un proveedor generaría una acumulación de reintentos que satura la cola de integración.
 
 ### 2.7 Saga coreografiada para el flujo transaccional distribuido
@@ -164,5 +164,6 @@ Solventa adopta un **estilo de microservicios orientado a dominio**, organizado 
 - [x] ADRs de las decisiones clave (sección 4)
 - [x] Trazabilidad patrón/táctica → ASR (sección 5)
 - [ ] **Validar la sección 5 contra el backlog real de atributos de calidad/ASR del equipo** (ver nota de supuestos) y ajustar nombres/prioridades si difieren
-- [ ] Decidir si el Circuit Breaker/Retry (2.6) y el reevaluar-Saga (2.7) se incorporan formalmente al diagrama de componentes (`4.1`) antes de la entrega final
+- [x] Formalizar el Circuit Breaker/Retry (2.6) en el diagrama de componentes (`4.1`)
+- [ ] Reevaluar la Saga coreografiada (2.7) si el flujo de indemnización gana más pasos condicionales (decisión abierta, no bloqueante para esta entrega)
 - [ ] Verificar que el razonamiento de esta sección quede también explicado verbalmente en el [video de evidencias](../../04-video-evidencias/)

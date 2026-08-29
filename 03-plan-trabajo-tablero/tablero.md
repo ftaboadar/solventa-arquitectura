@@ -7,7 +7,7 @@ _Última actualización: 2026-08-29_
 ## Backlog
 
 - [ ] `[1.2]` **Validar la trazabilidad patrón/táctica → ASR contra el backlog real de atributos de calidad del equipo** (la versión actual usa ASR inferidos del dominio, marcados como supuesto)
-- [ ] `[1.2]` Decidir si el Circuit Breaker/Retry y la revisión de la Saga se incorporan formalmente al diagrama de componentes (`4.1`)
+- [ ] `[1.2]` Reevaluar la Saga coreografiada si el flujo de indemnización gana más pasos condicionales (decisión abierta, no bloqueante)
 - [ ] `[1.3]` **Reemplazar los roles genéricos (Integrante A/B/C/D) por los nombres reales del equipo** en la distribución de actividades de los 2 experimentos
 - [ ] `[1.3]` Calibrar los umbrales numéricos (ms, %, lag) de los criterios de éxito contra el SLA/ASR real del equipo, no los de referencia usados en el diseño
 - [ ] `[1.3]` Ejecutar el Experimento 1 (Circuit Breaker/Retry en ACL Workers) en semanas 6-7 y completar resultados
@@ -38,6 +38,7 @@ _(vacío)_
 - [x] `[1.2]` Documentar tácticas por atributo de calidad (disponibilidad, rendimiento, escalabilidad, seguridad, interoperabilidad, auditabilidad, consistencia)
 - [x] `[1.2]` Redactar 5 ADRs de las decisiones clave de arquitectura
 - [x] `[1.2]` Trazar patrones/tácticas a ASR inferidos (pendiente de validar contra backlog real del equipo)
+- [x] `[1.2]` `[1.1]` Formalizar el Circuit Breaker/Retry en `4.1.Diagrama_Componentes.drawio` (bloque ACL Workers)
 - [x] `[1.3]` Diseñar Experimento 1: Circuit Breaker/Retry en ACL Workers (estructura completa de 9 puntos)
 - [x] `[1.3]` Diseñar Experimento 2: lag de réplica de lectura en Riesgo bajo carga (estructura completa de 9 puntos)
 - [x] `[1.3]` Documentar candidatos descartados y el criterio de estimación (Saga, región/zona GCP)
@@ -54,7 +55,7 @@ _(vacío)_
 | Sección | Tareas totales | Hechas | % |
 |---|---|---|---|
 | 1.1 Modelos de arquitectura | 5 | 5 | 100% |
-| 1.2 Diseño detallado | 6 | 4 | 67% |
+| 1.2 Diseño detallado | 7 | 5 | 71% |
 | 1.3 Diseño del experimento | 5 | 3 | 60% |
 | 2 Estrategia de pruebas | 4 | 2 | 50% |
 | 3 Plan de trabajo y tablero | 2 | 2 | 100% |
