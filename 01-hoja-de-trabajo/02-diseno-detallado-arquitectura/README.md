@@ -2,7 +2,7 @@
 
 Esta sección documenta, con el razonamiento explícito que exige el curso, los patrones y tácticas arquitectónicas que sustentan las decisiones visibles en [`01-modelos-arquitectura/`](../01-modelos-arquitectura/) (diagrama de contexto, componentes y despliegue).
 
-> ⚠️ **Supuesto a validar por el equipo**: los diagramas existentes no traen adjunto el backlog de atributos de calidad / ASRs priorizados en semanas anteriores. Los ASRs usados aquí para justificar cada táctica se **infirieron del dominio (seguros digitales + finanzas abiertas, regulado por la Superintendencia Financiera) y de lo que ya está resuelto en los diagramas** (réplicas HA, WAF, ACL, Event Bus, etc.). Antes de entregar, contrastar la sección 5 (Trazabilidad) contra el backlog real de atributos de calidad del equipo y ajustar prioridades/nombres si difieren.
+> ✅ **Trazabilidad actualizada con el backlog real**: la sección 5 se reconstruyó a partir del export real de Jira (`utils/Jira.xml`, proyecto **KAN — Solventa**, 13 historias, épicas por *Journey*). El backlog de Jira trae historias funcionales (`HU-Wxx` web/B2B, `HU-Mxx` móvil) con criterios de aceptación — no trae issues de tipo "ASR" o "atributo de calidad" explícito — así que los ASR de la tabla se derivan de los criterios de aceptación de cada historia, citando el ID real (`KAN-XX`). Sigue habiendo un supuesto menor: no hay confirmación de que estas sean *todas* las historias con implicación arquitectónica (la query de origen filtraba `type = Historia AND labels = Desarrollo`, así que épicas o historias con otra etiqueta no están en este export).
 
 ## Qué exige el curso para esta sección
 
@@ -142,18 +142,24 @@ Solventa adopta un **estilo de microservicios orientado a dominio**, organizado 
 
 ## 5. Trazabilidad patrón/táctica → ASR
 
-> Ver nota de supuestos al inicio de este documento: estos ASR se infirieron del dominio y de la arquitectura visible. **Ajustar contra el backlog real de atributos de calidad del equipo antes de entregar.**
+Cada fila cita la historia real del backlog (`utils/Jira.xml`) de la que se deriva el ASR, con su prioridad y puntos de historia — eso es lo que respalda por qué esa táctica/patrón se consideró necesaria y no opcional.
 
-| ASR (resumen) | Patrón/táctica que lo atiende | Componente(s) |
-|---|---|---|
-| El sistema debe seguir emitiendo pólizas aunque falle la base de datos primaria de Identidad/Pólizas | Failover automático de Cloud SQL (~60s) | `CLOUDSQL` / `CLOUDSQL_HA` |
-| La caída de un proveedor externo (KYC, pasarela de pago) no debe tumbar el flujo de suscripción | ACL + Circuit Breaker/Retry (a formalizar) | `CR_ACL`, capa 6 y 7 de `4.1` |
-| La cotización debe responder rápido incluso con muchos usuarios ajustando coberturas en simultáneo | Réplica de lectura MongoDB + caché Redis (score/catálogo) | `MONGOATLAS` réplica, `REDIS` |
-| Los eventos de negocio (emisión de póliza, aprobación de siniestro, pago) deben quedar auditados de forma inmutable para reportes al regulador | Event-driven + Auditoría append-only + Data Lake/BigQuery | `PUBSUB` → `CR_AUDIT`, `BQ` |
-| Los datos de un socio B2B no deben mezclarse ni exceder su cuota contratada | API Gateway con JWT + rate limiting por socio | `APIGW` |
-| Los datos sensibles (identidad, pagos) deben protegerse en reposo y en tránsito | Cloud KMS (CMEK), Secret Manager, subnet de datos sin ruta a Internet, Cloud Armor | `KMS`, `SECRETS`, zona `Z3`, `WAF` |
-| El pago paramétrico por evento IoT (clima/vuelos) debe dispararse automáticamente sin intervención manual | Event-driven (ingesta de evento paramétrico → apertura automática de siniestro → pago) | `EXT_IOT` → `QUEUE` → `PUBSUB` → `CR_CLAIMS` → `CR_PAYMENTS` |
-| Las alertas en tiempo real al usuario no deben degradar el rendimiento del resto de la plataforma | Servicio WebSocket aislado en GKE Autopilot | `GKE_WS` |
+| Historia (Jira) | ASR derivado del criterio de aceptación | Patrón/táctica que lo atiende | Componente(s) |
+|---|---|---|---|
+| **KAN-30** — HU-W07 Alta de socios de distribución (*Highest*, 13 pts) | Los socios de distribución deben autenticarse con token y **cuota aislada** al consumir la API de cotización/emisión (seguros embebidos) | API Gateway con JWT + *rate limiting* por socio (ver [2.2](#22-api-gateway)) | `APIGW` |
+| **KAN-31** — HU-M01 Onboarding y verificación biométrica (*Highest*, 13 pts) | El registro con KYC/AML y prueba de vida debe seguir funcionando de forma controlada aunque el proveedor externo falle o se degrade | ACL + Circuit Breaker/Retry hacia el proveedor KYC (ver [2.6](#26-circuit-breaker--retry-hacia-proveedores-externos)) — validado en el [Experimento 1](../03-diseno-experimento-arquitectura/#experimento-1--aislamiento-de-fallas-externas-vía-circuit-breaker--retry-en-acl-workers) | `CR_ACL` → KYC |
+| **KAN-24** — HU-W01 Perfilamiento en línea y oferta Vida Hipotecario (*Highest*, 20 pts) | El motor de calificación (rating) debe ejecutar y desplegar la prima "en línea" (respuesta rápida) mientras se consultan Open Finance/Open Data | Réplica de lectura MongoDB en Riesgo + caché Redis — validado en el [Experimento 2](../03-diseno-experimento-arquitectura/#experimento-2--ventana-de-consistencia-eventual-de-la-réplica-de-lectura-de-riesgo-bajo-carga-concurrente) | `MONGOATLAS` réplica, `REDIS` |
+| **KAN-28** — HU-W05 Recaudo y pago de indemnizaciones (*High*, 6 pts) | Los datos de tarjeta deben delegarse a un componente **tokenizado PCI-DSS** del proveedor — Solventa no debe almacenar datos de tarjeta en servidores propios | ACL como frontera de aislamiento hacia la pasarela de pago tokenizada (ver [2.3](#23-anti-corruption-layer-acl)) | `CR_ACL`, `PAYMENTS` |
+| **KAN-25** — HU-W02 Explicabilidad actuarial y auditoría inalterable (*Low*, 6 pts) | El linaje completo del dato (fuentes, ponderaciones, reglas) y el histórico de decisiones deben quedar consultables e inalterables para la SFC | Event-driven + Auditoría append-only + Data Lake/BigQuery (ver [2.4](#24-event-driven-architecture-event-bus)) | `PUBSUB` → `CR_AUDIT`, `BQ` |
+| **KAN-38** — HU-M04 Procesamiento de siniestro paramétrico automático (*High*, 13 pts) | Un evento externo cubierto (clima/vuelo) debe detectarse y pagarse automáticamente, con notificación push inmediata, sin intervención manual | Event-driven (ingesta paramétrica → apertura automática → pago) + servidor WebSocket/push aislado (ver [2.9](#29-componente-dedicado-para-conexiones-persistentes-websocket-en-gke)) | `EXT_IOT`→`QUEUE`→`PUBSUB`→`CR_CLAIMS`→`CR_PAYMENTS`; `GKE_WS`/`CR_NOTIFY` |
+| **KAN-26** — HU-W03 Suscripción, cobro y emisión automática de póliza (*Highest*, 6 pts) | Firma electrónica (no repudio) + cobro + emisión deben completarse como un único flujo de negocio que cruza varios servicios y bases de datos | Saga coreografiada (ver [2.7](#27-saga-coreografiada-para-el-flujo-transaccional-distribuido)) | eventos `PolicyIssued`, `PaymentConfirmed` |
+| **KAN-29** — HU-W06 Reportes de reaseguro bajo estándar ACORD (*Lowest*, 6 pts) | La información debe exportarse estructurada bajo el esquema **ACORD Data Standards** hacia reaseguradoras | Adaptador ACL específico para ACORD XML (ver [2.3](#23-anti-corruption-layer-acl)) | `CR_ACL` → Reaseguradoras |
+| **KAN-33** — HU-M03 Billetera de pólizas (*Lowest*, 13 pts) | El cliente debe recibir notificaciones push ante cualquier cambio de estado de póliza o siniestro | Event-driven + servicio de Notificaciones | `PUBSUB` → `CR_NOTIFY` |
+| **KAN-27** — HU-W04 Operación de siniestros asistidos y peritaje (*High*, 13 pts) | El operador debe evaluar evidencia multimedia **geoetiquetada** para asignar perito o autorizar pago | Almacenamiento binario separado (GCS/S3) + MongoDB Siniestros (ver [ADR-02](#adr-02--persistencia-poliglota-por-dominio)) | `CR_CLAIMS`, `BLOB`, `MG_CLAIM` |
+| _(sin historia específica — infraestructura transversal)_ | Los datos sensibles (identidad, pagos) deben protegerse en reposo y en tránsito | Cloud KMS (CMEK), Secret Manager, subnet de datos sin ruta a Internet, Cloud Armor | `KMS`, `SECRETS`, zona `Z3`, `WAF` |
+| _(sin historia específica — continuidad operativa)_ | El sistema debe seguir emitiendo pólizas aunque falle la base de datos primaria de Identidad/Pólizas | Failover automático de Cloud SQL (~60s) | `CLOUDSQL` / `CLOUDSQL_HA` |
+
+**Lectura de la tabla**: las 2 historias de prioridad *Highest* con más puntos (KAN-30 con 13 y KAN-24 con 20) son justamente las que motivan los dos [experimentos de arquitectura](../03-diseno-experimento-arquitectura/) — no es casualidad: son los puntos donde más incertidumbre de diseño hay y donde más impacto tiene fallar. Las dos filas finales no tienen una historia funcional asociada porque son requisitos transversales de cumplimiento normativo/continuidad que atraviesan todas las historias, no una específica.
 
 ---
 
@@ -163,7 +169,7 @@ Solventa adopta un **estilo de microservicios orientado a dominio**, organizado 
 - [x] Tácticas por atributo de calidad (sección 3)
 - [x] ADRs de las decisiones clave (sección 4)
 - [x] Trazabilidad patrón/táctica → ASR (sección 5)
-- [ ] **Validar la sección 5 contra el backlog real de atributos de calidad/ASR del equipo** (ver nota de supuestos) y ajustar nombres/prioridades si difieren
+- [x] Validar la sección 5 contra el backlog real (`utils/Jira.xml`, proyecto KAN) — trazabilidad reconstruida citando historias reales con su prioridad y puntos
 - [x] Formalizar el Circuit Breaker/Retry (2.6) en el diagrama de componentes (`4.1`)
 - [ ] Reevaluar la Saga coreografiada (2.7) si el flujo de indemnización gana más pasos condicionales (decisión abierta, no bloqueante para esta entrega)
 - [ ] Verificar que el razonamiento de esta sección quede también explicado verbalmente en el [video de evidencias](../../04-video-evidencias/)
