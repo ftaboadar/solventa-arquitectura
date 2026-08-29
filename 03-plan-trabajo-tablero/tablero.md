@@ -41,6 +41,7 @@ _(vacío)_
 - [x] `[1.2]` `[1.1]` Formalizar el Circuit Breaker/Retry en `4.1.Diagrama_Componentes.drawio` (bloque ACL Workers)
 - [x] `[1.2]` Reconstruir la trazabilidad ASR con el backlog real de Jira (`utils/Jira.xml`, 13 historias, proyecto KAN) — cada táctica cita la historia (`KAN-XX`), prioridad y puntos que la motivan
 - [x] `[1.2]` Corregir los 5 Escenarios de Calidad observados por el tutor (EC009, EC010, EC013, EC014, EC015, EC018) — aplicado por el equipo en Jira, registrado en [`correcciones-tutor-EdeC.md`](../01-hoja-de-trabajo/02-diseno-detallado-arquitectura/correcciones-tutor-EdeC.md)
+- [x] `[1.1]` `[1.2]` Agregar leyenda de los 9 patrones de diseño al diagrama de componentes (`4.1`), incluida la Saga coreografiada que antes no estaba nombrada visualmente
 - [x] `[1.3]` Asignar los 2 nombres reales del backlog (Frans Taboada, Daniel Felipe Urrego) a los roles de los experimentos con relación directa a su historia motivadora
 - [x] `[2]` Anclar las técnicas de prueba a criterios de aceptación reales del backlog (no repudio, PCI-DSS, biometría en Keystore/Keychain, sync offline, GPS embebido)
 - [x] `[1.3]` Diseñar Experimento 1: Circuit Breaker/Retry en ACL Workers (estructura completa de 9 puntos)

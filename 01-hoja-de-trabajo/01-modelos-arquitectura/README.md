@@ -7,7 +7,7 @@ Cuatro vistas del sistema **Solventa**, organizadas de lo general a lo específi
 | Archivo | Vista | Herramienta |
 |---|---|---|
 | [`1.Diagrama_Contexto.puml`](1.Diagrama_Contexto.puml) | Contexto del sistema (C4 Nivel 1) | PlantUML |
-| [`4.1.Diagrama_Componentes.drawio`](4.1.Diagrama_Componentes.drawio) | Componentes y conectores (vista funcional) — incluye Circuit Breaker/Retry en ACL | draw.io |
+| [`4.1.Diagrama_Componentes.drawio`](4.1.Diagrama_Componentes.drawio) | Componentes y conectores (vista funcional) — incluye Circuit Breaker/Retry en ACL y leyenda de los 9 patrones de diseño con su ubicación | draw.io |
 | [`4.2.Diagrama_Despliegue.drawio`](4.2.Diagrama_Despliegue.drawio) | Despliegue en infraestructura | draw.io |
 | [`3.Vista_Informacion.puml`](3.Vista_Informacion.puml) | Información: entidades, propiedad de datos, replicación | PlantUML |
 
@@ -40,7 +40,7 @@ Organizado en 7 capas horizontales:
 6. **Integración (ACL)**: colas de integración + workers/adaptadores anti-corrupción hacia el exterior.
 7. **Integraciones externas**: KYC, pasarelas de pago, firma electrónica, telemetría/IoT, reaseguradoras/ACORD, Open Finance/Open Data.
 
-Convenciones del diagrama: flujos síncronos (REST/GraphQL) en flecha continua, asíncronos/eventos en flecha punteada, request/reply asíncrono en flecha bidireccional punteada.
+Convenciones del diagrama: flujos síncronos (REST/GraphQL) en flecha continua, asíncronos/eventos en flecha punteada, request/reply asíncrono en flecha bidireccional punteada. El diagrama trae además una **leyenda de patrones de diseño** (sección 4 de las convenciones) que mapea cada uno de los 9 patrones documentados en [1.2](../02-diseno-detallado-arquitectura/) a su ubicación exacta — incluida la Saga coreografiada, que antes solo era visible como líneas punteadas sin nombrar el patrón.
 
 **Razonamiento**: la decisión de organizar por capas horizontales (en vez de, por ejemplo, un diagrama de contenedores C4 Nivel 2 más plano) responde a que Solventa tiene responsabilidades transversales claramente diferenciadas por capa (orquestación de canal, negocio, datos, integración) que se corresponden 1:1 con los patrones documentados en [1.2](../02-diseno-detallado-arquitectura/) — BFF vive en la capa de orquestación, ACL en la capa de integración, etc. — lo que hace que el diagrama sirva directamente como mapa de dónde aplica cada patrón, sin tener que cruzarlo con otro documento.
 
