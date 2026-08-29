@@ -14,6 +14,8 @@ _Última actualización: 2026-08-29_
 - [ ] `[1.3]` Evaluar si hay margen para levantar el candidato descartado (Saga de indemnización paramétrica) como 3er experimento
 - [ ] `[3]` Formalizar la metodología de priorización (Value vs. Risk Score: valor de negocio, riesgo regulatorio, dependencia técnica) como documento explícito en el backlog — corrige el 0/10 del tutor en "metodología de priorización no clara"
 - [ ] `[2]` Ratificar con quien lidera pruebas el presupuesto de latencia propuesto para FC-02/EXPLAIN
+- [ ] Exportar/revisar `Solventa_Hoja_de_Trabajo_Arquitectura.docx` (portada, formato, que abra bien en Word) antes de subirlo
+- [ ] Armar el documento índice de esta semana (tabla de enlaces, como `Enlaces-entrega-semana3.pdf`) con los links a Hoja de Trabajo, Estrategia de Pruebas y Jira
 - [ ] `[4]` Grabar el video explicando el razonamiento (no solo mostrar los modelos) y editarlo
 
 ## En progreso
@@ -51,6 +53,7 @@ _(vacío)_
 - [x] `[2]` Ubicar y leer la estrategia de pruebas real v1.0.0 (`Solventa_Estrategia_Pruebas.pdf`, 31 páginas, FC-01–FC-20) y refinarla como addendum sobre ella, no como reemplazo
 - [x] `[2]` Cerrar el riesgo que el propio v1.0.0 dejó abierto: presupuesto de latencia de FC-02/EXPLAIN (propuesto: p95≤800ms/p99≤1.5s, pendiente de ratificar)
 - [x] `[1.1]` `[2]` Agregar `EXPLAIN`, `OFFLINE_STORE`, `MAPS` a `4.1.Diagrama_Componentes.drawio` (validado sin colisiones ni referencias rotas) y regenerar el addendum Word
+- [x] Generar `Solventa_Hoja_de_Trabajo_Arquitectura.docx` (78 pts): portada, 3 secciones completas (modelos con imágenes, 9 patrones, tácticas, 5 ADRs, trazabilidad, 2 experimentos), copiado a la carpeta de entrega
 - [x] `[1.2]` `[1.3]` `[2]` `[4]` Enriquecer checklists de las secciones pendientes con la guía metodológica oficial del curso (`utils/`)
 - [x] `[3]` Crear estructura de carpetas alineada al rubric de la entrega
 - [x] `[3]` Crear tablero base de seguimiento
