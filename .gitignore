@@ -1,3 +1,10 @@
 # Material de referencia del curso (transcripciones, PDFs de clase) — uso local como guía,
 # no se versiona por ser contenido de terceros (posible material con derechos del curso/universidad).
 utils/
+
+# Código de los experimentos de arquitectura (semanas 6-7)
+node_modules/
+dist/
+*.log
+.env
+

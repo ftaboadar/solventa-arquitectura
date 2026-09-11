@@ -73,7 +73,7 @@ Aplicando la regla práctica de la guía del curso (*"¿esto ya lo probó toda l
 
 **Criterios de fracaso**: latencia p95 se dispara por encima del umbral, o se observan timeouts/errores propagados hacia Suscripción durante la falla simulada de KYC.
 
-**Resultados y análisis**: _pendiente de ejecución — corresponde a las semanas 6-7 del curso, no a esta entrega de diseño._
+**Resultados y análisis**: _pendiente de ejecución — corresponde a las semanas 6-7 del curso, no a esta entrega de diseño._ Código en [`experimento-1-acl-kyc/`](experimento-1-acl-kyc/).
 
 **Amenazas a la validez**: el stub de KYC no replica exactamente la variabilidad de latencia/errores del proveedor real; el experimento corre en un entorno reducido (sin el resto de microservicios reales compitiendo por recursos), por lo que la latencia base puede no ser representativa del entorno productivo con toda la carga concurrente de Solventa.
 
@@ -116,7 +116,7 @@ Esta sección detalla decisiones de diseño discutidas después de la primera re
 
 **Criterios de fracaso**: el lag crece de forma no acotada con la carga, o el percentil 95 de staleness supera el objetivo de UX — en ese caso el diseño debe ajustarse (p. ej. lectura forzada a primaria tras una escritura propia, o invalidación activa de caché en vez de solo esperar la réplica).
 
-**Resultados y análisis**: _pendiente de ejecución — corresponde a las semanas 6-7 del curso, no a esta entrega de diseño._
+**Resultados y análisis**: _pendiente de ejecución — corresponde a las semanas 6-7 del curso, no a esta entrega de diseño._ Código en [`experimento-2-replica-riesgo/`](experimento-2-replica-riesgo/).
 
 **Amenazas a la validez**: el volumen de "perfiles/segundo" simulado es una estimación del equipo, no un dato de tráfico real de producción (Solventa aún no tiene usuarios); el entorno de prueba (Atlas tier bajo o Docker local) puede tener características de red distintas a los nodos de producción, afectando el lag medido.
 

@@ -35,6 +35,15 @@ Sobre esa base ya se redactó contenido real de Solventa (no solo checklists) en
 
 Quedan pendientes de esta pasada, y requieren información que solo tiene el equipo: fusionar la sección 2 con la estrategia de pruebas anterior real (no está en este repo), completar los roles del equipo que Jira no identifica por nombre, calibrar umbrales numéricos contra el SLA real, ejecutar los experimentos (semanas 6-7), y el guion/grabación del video (sección 4).
 
+## Fase actual: construcción de los experimentos (semanas 6-7)
+
+El diseño (1.1, 1.2, 1.3) está cerrado. Lo que sigue es codificar y ejecutar los dos experimentos de `01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`, cuyo esqueleto de carpetas ya está listo:
+
+- [`experimento-1-acl-kyc/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-1-acl-kyc/) — stub de KYC (contrato asíncrono estilo Truora), ACL Worker (hexagonal: puerto + adaptadores + Circuit Breaker), consumidor UNDER simplificado, guiones k6.
+- [`experimento-2-replica-riesgo/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-2-replica-riesgo/) — replica set de MongoDB, escritor RISK, lector RATING.
+
+Ver [`CLAUDE.md`](CLAUDE.md) para el contexto completo de las decisiones ya cerradas, y `.claude/agents/` para los agentes de esta fase: `experiment-builder` (código), `experiment-designer` (diseño), `arch-documenter` (vistas/patrones).
+
 ## Guía metodológica y backlog real
 
 Los checklists de las secciones pendientes (1.2, 1.3, 2 y 4) se enriquecieron con la guía oficial del curso extraída de la carpeta local `utils/` (transcripciones de la clase en vivo de la semana 4 y de módulos grabados sobre diseño del experimento, tácticas de disponibilidad y estrategia de pruebas). Además, `utils/Jira.xml` (export real del proyecto **KAN — Solventa**) se usó para anclar la trazabilidad de ASR en 1.2, la motivación de los experimentos en 1.3 y las técnicas de prueba en 2 a historias de usuario, prioridades y puntos reales del equipo, en vez de a supuestos inferidos del dominio. Esa carpeta **no se versiona** (ver `.gitignore`) por ser material del curso/del equipo, pero cada README cita explícitamente qué archivo de `utils/` sustenta cada indicación (incluyendo el ID de historia `KAN-XX` cuando aplica), para que quien retome el trabajo pueda volver a la fuente.
