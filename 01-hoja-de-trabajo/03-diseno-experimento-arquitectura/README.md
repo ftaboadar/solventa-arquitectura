@@ -77,6 +77,25 @@ Aplicando la regla práctica de la guía del curso (*"¿esto ya lo probó toda l
 
 **Amenazas a la validez**: el stub de KYC no replica exactamente la variabilidad de latencia/errores del proveedor real; el experimento corre en un entorno reducido (sin el resto de microservicios reales compitiendo por recursos), por lo que la latencia base puede no ser representativa del entorno productivo con toda la carga concurrente de Solventa.
 
+### Refinamiento de diseño: contrato del stub y arquitectura interna del ACL Worker
+
+Esta sección detalla decisiones de diseño discutidas después de la primera redacción de la tabla anterior, para que quien construya el experimento en semanas 6-7 no tenga que re-derivarlas.
+
+**Proveedor de referencia para el contrato del stub.** Se eligió **Truora** ([dev.truora.com](https://dev.truora.com/)) como proveedor candidato concreto para modelar el stub, por su encaje con el contexto LatAm/Colombia del caso (identidad, listas restrictivas, AML). Su contrato real, verificado en la documentación pública, es **asíncrono**, no un simple request/response:
+
+- `POST /v1/validations` → `201 Created` + `validation_id`.
+- `GET /v1/validations/{validation_id}` → estado `pending` → `success` | `failure` (el cliente hace polling).
+- Autenticación por header `Truora-API-Key`.
+- Falla realista adicional: `429 Too Many Requests` por rate limiting, y estado `delayed` que puede durar horas/días en validaciones más profundas.
+
+**Implicación para el stub**: no basta con un stub que responda `200/500/timeout` de forma síncrona — debe imitar el ciclo crear→pollear, con modos de falla configurables: `healthy`, `pending-forever` (nunca resuelve), `error-429` (rate limit), `down` (no responde). Esto hace que el experimento valide un fallo más parecido al real: un proveedor que "no dice que no", solo nunca contesta.
+
+**La llamada UNDER → ACL sigue siendo síncrona (no hay Pub/Sub aquí).** Confirmado en la vista de información/journeys: UNDER coordina llamadas síncronas hacia ACL (KYC/AML y firma electrónica) **antes de emitir la póliza** — es una dependencia de decisión de negocio, no un efecto colateral, así que no puede resolverse publicando un evento y "enterándose después" (eso sí aplica, y ya está en el diseño, para lo que ocurre después de `PolicyIssued`: notificar/auditar/cobrar en paralelo vía Event Bus). Consecuencia para el ACL Worker: como el proveedor real (Truora) es internamente asíncrono pero UNDER necesita una respuesta síncrona acotada, el ACL Worker debe absorber ese ciclo con un **polling interno acotado por el umbral T** del ASR — si no resuelve a tiempo, corta y responde degradado a UNDER, sin que UNDER vea nunca el detalle del polling.
+
+**Arquitectura interna del ACL Worker: puertos y adaptadores (hexagonal).** Justificado por un requisito ya existente en el caso (facilidad de modificación — sustituir el proveedor de KYC detrás de una interfaz estable, sin propagar cambios al resto): el ACL Worker define un puerto de dominio, p. ej. `PuertoProveedorIdentidad.verificar(cliente)`, con dos adaptadores intercambiables que lo implementan — `TruoraAdapter` (proveedor real) y `StubKycAdapter` (usado en el experimento). El Circuit Breaker/Retry envuelve la llamada al adaptador concreto, nunca vive en el dominio de UNDER ni en el puerto. Cambiar de proveedor en el futuro (Onfido, MetaMap, etc.) es agregar un adaptador nuevo, no tocar el Circuit Breaker ni a UNDER.
+
+**Alcance deliberadamente NO hexagonal**: el consumidor simplificado que representa a UNDER (fila 3/6 de la tabla) y el propio stub de KYC son código de un solo uso para el experimento — no llevan esta estructura de puertos/adaptadores. Meterle esa capa sería sobre-ingeniería para piezas que solo existen para generar carga y respuestas simuladas; la hexagonal aplica al ACL Worker real que se lleva a producción, no al andamiaje de prueba.
+
 ---
 
 ## Experimento 2 — Ventana de consistencia eventual de la réplica de lectura de Riesgo bajo carga concurrente
@@ -119,6 +138,7 @@ Para justificar el criterio de estimación que pide el curso (por qué 2 experim
 - [x] Definir criterios de éxito/fracaso por experimento
 - [x] Documentar amenazas a la validez de cada experimento
 - [x] Mostrar criterio de estimación de cuántos experimentos son viables (sección de candidatos descartados)
+- [x] Refinar el contrato del stub de KYC del Experimento 1 contra un proveedor real de referencia (Truora) y decidir la arquitectura interna del ACL Worker (hexagonal: puerto `PuertoProveedorIdentidad` + adaptadores `TruoraAdapter`/`StubKycAdapter`)
 - [x] Asignar los 2 nombres reales disponibles en el backlog (Frans Taboada, Daniel Felipe Urrego) a los roles con relación directa a la historia que motiva cada experimento
 - [ ] **Completar los roles restantes (Integrante C/D) con el resto del equipo real** — el backlog no identifica más personas por nombre
 - [ ] **Calibrar los umbrales numéricos (ms, %, lag) contra el SLA/ASR real que el equipo haya definido para Solventa** — el backlog trae criterios cualitativos ("en línea", "inmediato") pero no números
