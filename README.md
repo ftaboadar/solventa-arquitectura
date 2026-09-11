@@ -9,7 +9,7 @@ Repositorio de la entrega de arquitectura del proyecto **Solventa** (sistema de 
 | 1 | **Hoja de trabajo**: modelos, patrones detallados y experimento | **78** | [`01-hoja-de-trabajo/`](01-hoja-de-trabajo/) | 🟡 En progreso |
 | 1.1 | — Modelos de arquitectura | 20 | [`01-hoja-de-trabajo/01-modelos-arquitectura/`](01-hoja-de-trabajo/01-modelos-arquitectura/) | 🟢 Completo (4 vistas + razonamiento) |
 | 1.2 | — Diseño detallado de arquitectura | 30 | [`01-hoja-de-trabajo/02-diseno-detallado-arquitectura/`](01-hoja-de-trabajo/02-diseno-detallado-arquitectura/) | 🟢 Completo, ASR trazados al backlog real de Jira |
-| 1.3 | — Diseño del experimento de arquitectura | 28 | [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/) | 🟡 2 experimentos diseñados y motivados por historias reales, falta ejecutar |
+| 1.3 | — Diseño del experimento de arquitectura | 28 | [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/) | 🟡 2 experimentos diseñados; **Experimento 1 construido, ejecutado y con resultados reales**; Experimento 2 sin empezar |
 | 2 | Refinamiento estrategia de pruebas | 2 | [`02-estrategia-pruebas/`](02-estrategia-pruebas/) | 🟡 Addendum sobre el v1.0.0 real, falta decisión sobre 3 componentes faltantes en diagramas |
 | 3 | Plan de trabajo y tablero (actualización) | 10 | [`03-plan-trabajo-tablero/`](03-plan-trabajo-tablero/) | 🟢 Tablero base creado |
 | 4 | Video con evidencias | 10 | [`04-video-evidencias/`](04-video-evidencias/) | 🔴 Pendiente (guion listo) |
@@ -37,10 +37,10 @@ Quedan pendientes de esta pasada, y requieren información que solo tiene el equ
 
 ## Fase actual: construcción de los experimentos (semanas 6-7)
 
-El diseño (1.1, 1.2, 1.3) está cerrado. Lo que sigue es codificar y ejecutar los dos experimentos de `01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`, cuyo esqueleto de carpetas ya está listo:
+El diseño (1.1, 1.2, 1.3) está cerrado. Se está codificando y ejecutando los dos experimentos de `01-hoja-de-trabajo/03-diseno-experimento-arquitectura/`:
 
-- [`experimento-1-acl-kyc/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-1-acl-kyc/) — stub de KYC (contrato asíncrono estilo Truora), ACL Worker (hexagonal: puerto + adaptadores + Circuit Breaker), consumidor UNDER simplificado, guiones k6.
-- [`experimento-2-replica-riesgo/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-2-replica-riesgo/) — replica set de MongoDB, escritor RISK, lector RATING.
+- [`experimento-1-acl-kyc/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-1-acl-kyc/) — ✅ **completo**: stub de KYC (contrato asíncrono estilo Truora), ACL Worker (hexagonal: puerto + adaptadores + Circuit Breaker), consumidor UNDER simplificado y guiones k6, todo construido, corrido en vivo y con los 3 criterios de éxito cumplidos (ver resultados en el README de diseño de la 1.3).
+- [`experimento-2-replica-riesgo/`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-2-replica-riesgo/) — 🔴 **sin empezar**, solo el esqueleto de carpeta. Punto de partida de la próxima sesión.
 
 Ver [`CLAUDE.md`](CLAUDE.md) para el contexto completo de las decisiones ya cerradas, y `.claude/agents/` para los agentes de esta fase: `experiment-builder` (código), `experiment-designer` (diseño), `arch-documenter` (vistas/patrones).
 

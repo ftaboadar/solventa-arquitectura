@@ -16,8 +16,15 @@ experimento-1-acl-kyc/
 
 ## Estado
 
-🔴 Pendiente de construcción — corresponde a las semanas 6-7 del curso. Usa el agente `experiment-builder` de este repo para levantar cada pieza.
+✅ **Completo y verificado (2026-09-10).** Las 4 piezas están construidas, corridas en vivo (aisladas y juntas con k6) y comiteadas/pusheadas. Cada carpeta documenta su propia verificación:
 
-## Al terminar
+- [`stub-kyc/README.md`](stub-kyc/README.md) — 4 modos de falla, verificado con curl.
+- [`acl-worker/README.md`](acl-worker/README.md) — hexagonal + Circuit Breaker, verificado en vivo contra el stub (incluye un hallazgo real sobre la ventana móvil de Opossum).
+- [`consumidor-under/README.md`](consumidor-under/README.md) — rutas `con-kyc`/`sin-kyc`.
+- [`k6/README.md`](k6/README.md) — `baseline.js` y `falla-inyectada.js`, con los resultados de la corrida real.
 
-Actualiza la sección "Resultados y análisis" del [README de diseño](../README.md) con los números reales obtenidos (latencia p95, timeouts en cascada observados, tiempo de recuperación del circuito) y la conclusión frente a los criterios de éxito/fracaso ya definidos ahí.
+Los 3 criterios de éxito del experimento (ver [README de diseño](../README.md#experimento-1--aislamiento-de-fallas-externas-vía-circuit-breaker--retry-en-acl-workers)) se cumplieron con datos reales de k6 — el resumen ya está volcado ahí, en "Resultados y análisis".
+
+## Pendiente (no bloqueante)
+
+Calibrar `KYC_TIMEOUT_MS` y los parámetros del Circuit Breaker contra un SLA numérico real del equipo (hoy son valores de referencia razonables, no cifras de producción — ver checklist del README de diseño).

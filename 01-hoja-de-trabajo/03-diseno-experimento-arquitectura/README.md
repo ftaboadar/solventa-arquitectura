@@ -73,7 +73,22 @@ Aplicando la regla práctica de la guía del curso (*"¿esto ya lo probó toda l
 
 **Criterios de fracaso**: latencia p95 se dispara por encima del umbral, o se observan timeouts/errores propagados hacia Suscripción durante la falla simulada de KYC.
 
-**Resultados y análisis**: _pendiente de ejecución — corresponde a las semanas 6-7 del curso, no a esta entrega de diseño._ Código en [`experimento-1-acl-kyc/`](experimento-1-acl-kyc/).
+**Resultados y análisis**: ✅ **ejecutado el 2026-09-10**, con las 4 piezas construidas y corriendo de verdad (stub, ACL Worker, consumidor de UNDER, k6). Detalle completo en [`experimento-1-acl-kyc/`](experimento-1-acl-kyc/) (cada pieza documenta su propia verificación en vivo). Resumen:
+
+- **Aislado (ACL Worker + stub, sin UNDER ni k6)**: con el proveedor sano, `aprobado` en 490ms, circuito `closed`. Con el proveedor en `pending-forever`, las 2 primeras llamadas tardan ~3.1s (agotan el umbral T + 1 reintento) y resultan en `degradado`; al tercer `fire` el circuito abre y las llamadas siguientes responden **fail-fast en 0-1ms**. Al volver el proveedor a sano, el circuito transiciona solo `open → half-open → closed` (~5s después de abrir) y la siguiente llamada resuelve en 465ms.
+- **Carga real con k6 contra el stack completo** (`baseline.js`, 8 VUs/30s, 330 requests, 0% fallos; `falla-inyectada.js`, 60s con ventana caída t=15s→45s, 515 requests, 0% `http_req_failed`):
+
+  | Escenario | `con-kyc` p95 | `sin-kyc` p95 |
+  |---|---|---|
+  | Baseline (KYC sano) | 616.6 ms | 50.8 ms |
+  | Falla inyectada (KYC caído 15-45s) | 3.1 s | **49.6 ms** |
+
+**Veredicto contra los 3 criterios de éxito**:
+- (a) ✅ `sin-kyc` p95 prácticamente idéntico entre baseline y falla (49.6ms vs 50.8ms, muy por debajo de +10%) — las suscripciones no dependientes de KYC no se ven afectadas.
+- (b) ✅ 0% de requests fallidos (`http_req_failed`) en ambas corridas — ningún timeout/error propagado hacia Suscripción; `con-kyc` siempre responde 200 (aprobado/rechazado/degradado), nunca 5xx.
+- (c) ✅ el circuito cerró automáticamente al final de la corrida de falla inyectada, sin intervención manual, tanto en la verificación aislada como en la corrida de k6 de extremo a extremo.
+
+Ningún criterio de fracaso se disparó. Pendiente (no bloqueante): calibrar `KYC_TIMEOUT_MS` y los parámetros del Circuit Breaker contra un SLA numérico real (hoy son valores de referencia, documentados como tales en `acl-worker/README.md`) — ver checklist.
 
 **Amenazas a la validez**: el stub de KYC no replica exactamente la variabilidad de latencia/errores del proveedor real; el experimento corre en un entorno reducido (sin el resto de microservicios reales compitiendo por recursos), por lo que la latencia base puede no ser representativa del entorno productivo con toda la carga concurrente de Solventa.
 
@@ -141,6 +156,7 @@ Para justificar el criterio de estimación que pide el curso (por qué 2 experim
 - [x] Refinar el contrato del stub de KYC del Experimento 1 contra un proveedor real de referencia (Truora) y decidir la arquitectura interna del ACL Worker (hexagonal: puerto `PuertoProveedorIdentidad` + adaptadores `TruoraAdapter`/`StubKycAdapter`)
 - [x] Asignar los 2 nombres reales disponibles en el backlog (Frans Taboada, Daniel Felipe Urrego) a los roles con relación directa a la historia que motiva cada experimento
 - [ ] **Completar los roles restantes (Integrante C/D) con el resto del equipo real** — el backlog no identifica más personas por nombre
-- [ ] **Calibrar los umbrales numéricos (ms, %, lag) contra el SLA/ASR real que el equipo haya definido para Solventa** — el backlog trae criterios cualitativos ("en línea", "inmediato") pero no números
-- [ ] Ejecutar ambos experimentos en las semanas 6-7 y completar "Resultados y análisis" con datos reales
+- [ ] **Calibrar los umbrales numéricos (ms, %, lag) contra el SLA/ASR real que el equipo haya definido para Solventa** — el backlog trae criterios cualitativos ("en línea", "inmediato") pero no números; en el Experimento 1 esto queda como `KYC_TIMEOUT_MS`/parámetros de Opossum documentados como valores de referencia en `experimento-1-acl-kyc/acl-worker/README.md`
+- [x] **Experimento 1 ejecutado** (2026-09-10): 4 piezas construidas y verificadas en vivo (`experimento-1-acl-kyc/`), 3/3 criterios de éxito cumplidos con datos reales de k6 — ver "Resultados y análisis" arriba
+- [ ] **Experimento 2 pendiente de construir y ejecutar** — el esqueleto de carpeta existe (`experimento-2-replica-riesgo/`) pero sin código aún; es el punto de partida de la próxima sesión
 - [ ] Verificar que el razonamiento de esta sección quede también explicado verbalmente en el [video de evidencias](../../04-video-evidencias/)

@@ -4,7 +4,10 @@ Repositorio de la entrega de arquitectura de **Solventa** (aseguradora digital /
 
 ## Estado actual (2026-09-10)
 
-El **diseño** (secciones 1.1, 1.2 y 1.3 del rubric) está completo. Lo que sigue, y para lo que está preparado este repo, es la **construcción y ejecución de los experimentos de arquitectura** (semanas 6-7), documentados en [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/README.md`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/README.md).
+El **diseño** (secciones 1.1, 1.2 y 1.3 del rubric) está completo. La fase de **construcción y ejecución de los experimentos** (semanas 6-7) está en curso, documentada en [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/README.md`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/README.md):
+
+- **Experimento 1 (ACL Worker/KYC): ✅ completo.** Las 4 piezas (`stub-kyc`, `acl-worker`, `consumidor-under`, `k6`) están construidas, corridas en vivo y comiteadas/pusheadas a `origin/main`. Los 3 criterios de éxito se cumplieron con datos reales de k6 — ver la sección "Resultados y análisis" del Experimento 1 en el README de diseño para los números.
+- **Experimento 2 (réplica de Riesgo): 🔴 sin empezar.** Solo existe el esqueleto de carpeta (`experimento-2-replica-riesgo/README.md`) con la estructura esperada. **Este es el punto de partida de la próxima sesión** — invoca `experiment-builder` y dile que empiece por el replica set de MongoDB.
 
 ## Los dos experimentos (resumen — el README de diseño es la fuente de verdad completa)
 
