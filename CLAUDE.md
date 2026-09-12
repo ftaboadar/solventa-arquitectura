@@ -1,33 +1,27 @@
-# Solventa — Arquitectura (contexto de trabajo)
+# Solventa — Experimentos de Arquitectura (contexto de trabajo)
 
-Repositorio de la entrega de arquitectura de **Solventa** (aseguradora digital / insurtech sobre Open Finance y Open Data), curso MISW4501, Universidad de los Andes. Ver [`README.md`](README.md) para el mapa completo de la entrega y su estado por sección.
+Este repo se acotó deliberadamente a **solo** el diseño y la construcción de los 2 experimentos de arquitectura de Solventa (aseguradora digital / insurtech sobre Open Finance y Open Data), curso MISW4501. El resto de la entrega (vistas de arquitectura, patrones detallados, estrategia de pruebas, plan de trabajo, video) vive fuera de este espacio de trabajo — no lo traigas de vuelta aquí.
 
-## Estado actual (2026-09-10)
+Ver [`README.md`](README.md) para el mapa del repo y [`DISENO-EXPERIMENTOS.md`](DISENO-EXPERIMENTOS.md) para la fuente de verdad completa del diseño de ambos experimentos.
 
-El **diseño** (secciones 1.1, 1.2 y 1.3 del rubric) está completo. La fase de **construcción y ejecución de los experimentos** (semanas 6-7) está en curso, documentada en [`01-hoja-de-trabajo/03-diseno-experimento-arquitectura/README.md`](01-hoja-de-trabajo/03-diseno-experimento-arquitectura/README.md):
+## Estado actual (2026-09-12)
 
-- **Experimento 1 (ACL Worker/KYC): ✅ completo.** Las 4 piezas (`stub-kyc`, `acl-worker`, `consumidor-under`, `k6`) están construidas, corridas en vivo y comiteadas/pusheadas a `origin/main`. Los 3 criterios de éxito se cumplieron con datos reales de k6 — ver la sección "Resultados y análisis" del Experimento 1 en el README de diseño para los números.
+- **Experimento 1 (ACL Worker/KYC): ✅ completo.** Las 4 piezas (`experimento-1-acl-kyc/stub-kyc`, `acl-worker`, `consumidor-under`, `k6`) están construidas, corridas en vivo y comiteadas/pusheadas a `origin/main`. Los 3 criterios de éxito se cumplieron con datos reales de k6 — ver la sección "Resultados y análisis" del Experimento 1 en `DISENO-EXPERIMENTOS.md`.
 - **Experimento 2 (réplica de Riesgo): 🔴 sin empezar.** Solo existe el esqueleto de carpeta (`experimento-2-replica-riesgo/README.md`) con la estructura esperada. **Este es el punto de partida de la próxima sesión** — invoca `experiment-builder` y dile que empiece por el replica set de MongoDB.
 
-## Los dos experimentos (resumen — el README de diseño es la fuente de verdad completa)
+## Decisiones ya cerradas del Experimento 1 (no las reinterpretes)
 
-1. **Experimento 1 — Circuit Breaker/Retry en ACL Worker de KYC** (motivado por KAN-31). Decisiones ya cerradas que cualquier sesión de código debe respetar:
-   - El stub de KYC imita el contrato **asíncrono real** de un proveedor de referencia (Truora): `POST /v1/validations` → `201`+`validation_id`, `GET /v1/validations/:id` → `pending`/`success`/`failure`, con modos de falla `pending-forever`, `error-429`, `down`.
-   - La llamada UNDER → ACL es **síncrona, no vía Pub/Sub** (es una dependencia de decisión de negocio antes de emitir la póliza, no un efecto colateral). El ACL Worker absorbe el ciclo asíncrono del proveedor con **polling interno acotado por el umbral T** del ASR.
-   - El ACL Worker se estructura internamente como **puertos y adaptadores (hexagonal)**: puerto `PuertoProveedorIdentidad`, adaptadores `TruoraAdapter`/`StubKycAdapter`, Circuit Breaker envolviendo el adaptador. El consumidor simplificado de UNDER y el stub de KYC **no** llevan esta estructura — son andamiaje de prueba.
-   - Carpeta de código: `01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-1-acl-kyc/`.
-
-2. **Experimento 2 — Ventana de consistencia eventual de la réplica de lectura de Riesgo** (motivado por KAN-24, la historia de más puntos del backlog).
-   - Carpeta de código: `01-hoja-de-trabajo/03-diseno-experimento-arquitectura/experimento-2-replica-riesgo/`.
+- El stub de KYC imita el contrato **asíncrono real** de un proveedor de referencia (Truora): `POST /v1/validations` → `201`+`validation_id`, `GET /v1/validations/:id` → `pending`/`success`/`failure`, con modos de falla `pending-forever`, `error-429`, `down`.
+- La llamada UNDER → ACL es **síncrona, no vía Pub/Sub** (es una dependencia de decisión de negocio antes de emitir la póliza, no un efecto colateral). El ACL Worker absorbe el ciclo asíncrono del proveedor con **polling interno acotado por el umbral T** del ASR.
+- El ACL Worker se estructura internamente como **puertos y adaptadores (hexagonal)**: puerto `PuertoProveedorIdentidad`, adaptadores `TruoraAdapter`/`StubKycAdapter`, Circuit Breaker (Opossum) envolviendo el adaptador. El consumidor simplificado de UNDER y el stub de KYC **no** llevan esta estructura — son andamiaje de prueba.
 
 ## Agentes disponibles en este repo
 
 - **`experiment-builder`** — construir, ejecutar y analizar el código de los dos experimentos. Úsalo para cualquier tarea de codificación de esta fase.
-- **`experiment-designer`** — refinar o auditar el *diseño* de los experimentos (no código).
-- **`arch-documenter`** — vistas de arquitectura, patrones y ADRs en `01-hoja-de-trabajo/01-modelos-arquitectura/` y `02-diseno-detallado-arquitectura/`.
+- **`experiment-designer`** — refinar o auditar el *diseño* en `DISENO-EXPERIMENTOS.md` (no código).
 
 ## Reglas de trabajo en este repo
 
-- El diseño de experimentos (README de la sección 1.3) es la fuente de verdad — el código debe seguirlo, no al revés. Si el código revela que el diseño necesita cambiar, se actualiza el README primero (o en el mismo cambio), nunca se deja la divergencia implícita.
-- No sobre-construir: estos son experimentos de curso con presupuesto de horas real y compartido con trabajo de UX/UI (ver sección "Reconciliación de esfuerzo" si existe en el README de diseño) — construir solo lo necesario para generar la evidencia que piden los criterios de éxito/fracaso ya definidos.
-- `utils/` no se versiona (material del curso) — cualquier referencia a ese material debe quedar citada en el README correspondiente, no asumida.
+- `DISENO-EXPERIMENTOS.md` es la fuente de verdad — el código debe seguirlo, no al revés. Si el código revela que el diseño necesita cambiar, se actualiza ese archivo primero (o en el mismo cambio), nunca se deja la divergencia implícita.
+- No sobre-construir: estos son experimentos de curso con presupuesto de horas real y compartido con trabajo de UX/UI — construir solo lo necesario para generar la evidencia que piden los criterios de éxito/fracaso ya definidos.
+- No traigas de vuelta a este repo contenido de otras secciones de la entrega (vistas, patrones, estrategia de pruebas, plan de trabajo, video) — ese es el punto de haberlo sacado.

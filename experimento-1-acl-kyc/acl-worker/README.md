@@ -2,7 +2,7 @@
 
 ACL Worker de KYC para el Experimento 1 (Circuit Breaker/Retry) de arquitectura de Solventa. Es la
 única pieza de este experimento que lleva estructura de **puertos y adaptadores (hexagonal)** — ver
-["Refinamiento de diseño"](../../README.md#refinamiento-de-diseño-contrato-del-stub-y-arquitectura-interna-del-acl-worker)
+["Refinamiento de diseño"](../../DISENO-EXPERIMENTOS.md#refinamiento-de-diseño-contrato-del-stub-y-arquitectura-interna-del-acl-worker)
 en el README de diseño. El stub de KYC (`../stub-kyc/`) y el futuro consumidor simplificado de UNDER
 son andamiaje de prueba y deliberadamente **no** llevan esta capa.
 

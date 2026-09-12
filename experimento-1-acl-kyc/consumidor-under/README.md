@@ -3,7 +3,7 @@
 Consumidor simplificado de UNDER (Suscripción) para el Experimento 1 (Circuit Breaker/Retry) de
 arquitectura de Solventa. Es andamiaje de prueba de un solo uso: **no** lleva estructura de
 puertos/adaptadores (esa capa hexagonal es del `acl-worker/`, no de esta pieza — ver la sección
-"Alcance deliberadamente NO hexagonal" del [README de diseño](../../README.md)).
+"Alcance deliberadamente NO hexagonal" del [README de diseño](../../DISENO-EXPERIMENTOS.md)).
 
 Expone dos endpoints porque el criterio de éxito (a) del experimento compara explícitamente la
 latencia de solicitudes dependientes de KYC contra las que no dependen de KYC:

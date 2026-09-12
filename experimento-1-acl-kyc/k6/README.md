@@ -46,7 +46,7 @@ Qué esperar en el resumen: `http_req_duration{endpoint:sin-kyc}` con un p95 sim
 timeout+retry del ACL Worker, ~3.1 s cada uno, antes de que el circuito abra y empiece a responder
 rápido en modo degradado) y debería volver a bajar tras `t=45s` una vez el circuito cierra. El
 análisis completo contra los criterios de éxito/fracaso del experimento se documenta en el README de
-diseño (`../../README.md`), no aquí.
+diseño (`../../DISENO-EXPERIMENTOS.md`), no aquí.
 
 ## Variables de entorno (ambos scripts)
 

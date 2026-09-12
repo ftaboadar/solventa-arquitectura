@@ -3,7 +3,7 @@
 Stub del proveedor de KYC para el Experimento 1 (Circuit Breaker/Retry en el ACL Worker). Imita el
 contrato **asíncrono** real de Truora ([dev.truora.com](https://dev.truora.com/)) — crear→pollear,
 no un simple síncrono 200/500 — según el "Refinamiento de diseño" en
-[`../../README.md`](../../README.md).
+[`../../DISENO-EXPERIMENTOS.md`](../../DISENO-EXPERIMENTOS.md).
 
 Es andamiaje de prueba de un solo uso: **no** lleva estructura de puertos/adaptadores (esa capa
 hexagonal es del ACL Worker, no de este stub — ver la sección "Alcance deliberadamente NO
