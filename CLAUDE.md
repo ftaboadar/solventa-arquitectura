@@ -7,6 +7,7 @@ Ver [`README.md`](README.md) para el mapa del repo y [`DISENO-EXPERIMENTOS.md`](
 ## Estado actual (2026-09-12)
 
 - **Experimento 1 (ACL Worker/KYC): ✅ completo.** Las 4 piezas (`experimento-1-acl-kyc/stub-kyc`, `acl-worker`, `consumidor-under`, `k6`) están construidas, corridas en vivo y comiteadas/pusheadas a `origin/main`. Los 3 criterios de éxito se cumplieron con datos reales de k6 — ver la sección "Resultados y análisis" del Experimento 1 en `DISENO-EXPERIMENTOS.md`.
+- **IaC del Experimento 1: preparado, no aplicado.** [`experimento-1-acl-kyc/infra/`](experimento-1-acl-kyc/infra/) tiene el Terraform para desplegar las 3 piezas en Cloud Run (`us-central1`, proyecto `hda-projectt`, facturación confirmada activa). `terraform init`/`validate`/`plan` ya corrieron sin errores (9 recursos a crear). **`terraform apply` NO se ha ejecutado** — crea infraestructura real facturable, requiere confirmación explícita del usuario antes de correrlo.
 - **Experimento 2 (réplica de Riesgo): 🔴 sin empezar.** Solo existe el esqueleto de carpeta (`experimento-2-replica-riesgo/README.md`) con la estructura esperada. **Este es el punto de partida de la próxima sesión** — invoca `experiment-builder` y dile que empiece por el replica set de MongoDB.
 
 ## Decisiones ya cerradas del Experimento 1 (no las reinterpretes)

@@ -8,3 +8,10 @@ dist/
 *.log
 .env
 
+# Terraform (infra/ de cada experimento) — .terraform.lock.hcl SÍ se versiona (pin de providers)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+

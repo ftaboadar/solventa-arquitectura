@@ -1,0 +1,3 @@
+# Copia este archivo a terraform.tfvars (ignorado por git) y ajusta los valores.
+project_id = "hda-projectt"
+region     = "us-central1"
