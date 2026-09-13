@@ -49,7 +49,7 @@ resource "google_cloud_run_v2_service" "stub_kyc" {
         container_port = 8080
       }
       # PORT es una env var reservada que Cloud Run inyecta solo (= container_port).
-      # stub-kyc ya lee process.env.PORT, así que no hace falta fijarla aquí.
+      # stub-kyc ya lee os.environ["PORT"] (Python), así que no hace falta fijarla aquí.
       resources {
         limits = {
           cpu    = "1"
@@ -113,6 +113,13 @@ resource "google_cloud_run_v2_service" "acl_worker" {
         value = tostring(var.breaker_reset_timeout_ms)
       }
       env {
+        # Nota (2026-09-13): esta variable era específica del modelo de
+        # ventana móvil de opossum (Node). El ACL Worker en Python usa
+        # `purgatory` (conteo de fallos consecutivos, sin ventana móvil) y
+        # no la lee — queda declarada aquí para no romper el `tfvars`
+        # existente, pero es un no-op para el contenedor Python. Ver
+        # "Decisión sobre la librería de Circuit Breaker" en
+        # experimento-1-acl-kyc/acl-worker/README.md.
         name  = "BREAKER_ROLLING_COUNT_TIMEOUT_MS"
         value = tostring(var.breaker_rolling_count_timeout_ms)
       }

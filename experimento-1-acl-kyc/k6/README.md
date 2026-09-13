@@ -6,6 +6,11 @@ KYC caído. Ambos scripts apuntan a `consumidor-under` (UNDER), **no** directo a
 punto es medir el impacto en "Suscripción", no en el ACL Worker por sí solo (eso ya se verificó de
 forma aislada en `../acl-worker/README.md`).
 
+Estos scripts son agnósticos al lenguaje del backend — no cambiaron cuando las 4 piezas del
+experimento se migraron de Node.js a Python (2026-09-13): el contrato HTTP (rutas, códigos de
+estado, `/control/mode`) se preservó exactamente. Ver "Resultados y análisis" del Experimento 1 en
+`../../DISENO-EXPERIMENTOS.md` para los números re-verificados contra el stack Python.
+
 Requiere los tres servicios del experimento levantados: `stub-kyc` (4000), `acl-worker` (5000 o el
 puerto que se use) y `consumidor-under` (6000).
 

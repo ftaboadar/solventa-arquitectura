@@ -9,6 +9,12 @@ Es andamiaje de prueba de un solo uso: **no** lleva estructura de puertos/adapta
 hexagonal es del ACL Worker, no de este stub — ver la sección "Alcance deliberadamente NO
 hexagonal" del README de diseño).
 
+**Stack: Python/FastAPI** (migrado desde Node.js/Express el 2026-09-13 — ver "Resultados y
+análisis" del Experimento 1 en [`../../DISENO-EXPERIMENTOS.md`](../../DISENO-EXPERIMENTOS.md) para
+el motivo y los números re-verificados). El contrato HTTP no cambió: mismas rutas, mismos códigos
+de estado, mismo comportamiento de los 4 modos — los guiones de `../k6/` siguen funcionando sin
+cambios contra este servicio.
+
 ## Contrato
 
 - `POST /v1/validations` → `201` + `{ "validation_id": "<uuid>", "status": "pending" }`
@@ -42,14 +48,13 @@ ya creadas.
 
 ## Cómo levantarlo
 
-### Local (Node.js)
+### Local (Python)
 
 ```bash
 cd stub-kyc
-npm install
-npm run dev     # con nodemon, recarga en caliente
-# o
-npm start       # sin nodemon
+python -m venv .venv && source .venv/bin/activate   # o .venv\Scripts\activate en Windows
+pip install -r requirements.txt
+python src/server.py
 ```
 
 ### Docker
@@ -128,7 +133,7 @@ curl -i -X POST http://localhost:4000/control/mode \
 
 ## Notas de alcance
 
-- Estado en memoria (`Map`), sin persistencia — se reinicia si el proceso se reinicia. Suficiente
+- Estado en memoria (`dict`), sin persistencia — se reinicia si el proceso se reinicia. Suficiente
   para un stub de experimento (ver README de diseño, sección "Amenazas a la validez").
 - No implementa el estado `delayed` (horas/días) que documenta Truora para validaciones profundas
   — no está entre los 4 modos que el diseño del experimento decidió cubrir.

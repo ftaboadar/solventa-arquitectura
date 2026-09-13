@@ -1,23 +1,13 @@
-FROM node:20-alpine AS build
+FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY package.json package-lock.json* tsconfig.json ./
-RUN npm install
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
-RUN npm run build
-
-FROM node:20-alpine
-
-WORKDIR /app
-
-COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
-
-COPY --from=build /app/dist ./dist
 
 ENV ACL_WORKER_PORT=5000
 EXPOSE 5000
 
-CMD ["node", "dist/http/server.js"]
+CMD ["python", "-m", "src.http.server"]

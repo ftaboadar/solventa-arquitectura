@@ -5,6 +5,10 @@ arquitectura de Solventa. Es andamiaje de prueba de un solo uso: **no** lleva es
 puertos/adaptadores (esa capa hexagonal es del `acl-worker/`, no de esta pieza — ver la sección
 "Alcance deliberadamente NO hexagonal" del [README de diseño](../../DISENO-EXPERIMENTOS.md)).
 
+**Stack: Python/FastAPI** (migrado desde Node.js/Express el 2026-09-13 — ver "Resultados y
+análisis" del Experimento 1 en `../../DISENO-EXPERIMENTOS.md`). Mismas rutas y comportamiento; los
+guiones de `../k6/` siguen funcionando sin cambios.
+
 Expone dos endpoints porque el criterio de éxito (a) del experimento compara explícitamente la
 latencia de solicitudes dependientes de KYC contra las que no dependen de KYC:
 
@@ -23,11 +27,11 @@ Redis (mismo Redis que usan `acl-worker/` y `consolidador-kyc/`). Si existe un e
 de un intento de reconciliación anterior (`{estado, timestamp}`), se usa en la respuesta en vez del
 placeholder genérico; si no existe (o la lectura falla), se conserva el comportamiento previo.
 
-- **Cliente Redis**: `ioredis`, el mismo usado en `acl-worker/` y `consolidador-kyc/` por
-  consistencia.
+- **Cliente Redis**: `redis` (redis-py, `redis.asyncio`), el mismo paquete usado en `acl-worker/` y
+  `consolidador-kyc/` por consistencia.
 - **Por qué la lectura no puede convertirse en el nuevo cuello de botella**: se configuró con
-  `maxRetriesPerRequest: 1` y `commandTimeout: 300` ms — si Redis está caído o lento, la lectura
-  falla rápido, se loguea (no bloqueante) y se cae al placeholder genérico. Nunca se espera
+  `socket_connect_timeout=0.3` y `socket_timeout=0.3` (segundos) — si Redis está caído o lento, la
+  lectura falla rápido, se loguea (no bloqueante) y se cae al placeholder genérico. Nunca se espera
   indefinidamente por Redis.
 - **Nueva variable de entorno**: `REDIS_URL` (default `redis://localhost:6379`).
 
@@ -50,14 +54,13 @@ acotado: `con-kyc` nunca espera indefinidamente, incluso si el ACL Worker se cue
 
 ## Cómo levantarlo
 
-### Local (Node.js)
+### Local (Python)
 
 ```bash
 cd consumidor-under
-npm install
-npm run dev     # con nodemon, recarga en caliente
-# o
-npm start       # sin nodemon
+python -m venv .venv && source .venv/bin/activate   # o .venv\Scripts\activate en Windows
+pip install -r requirements.txt
+python src/server.py
 ```
 
 Requiere el `acl-worker/` corriendo (default `http://localhost:5000`) para que `con-kyc` tenga algo

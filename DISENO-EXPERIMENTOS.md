@@ -68,14 +68,39 @@ Aplicando la regla práctica de la guía del curso (*"¿esto ya lo probó toda l
 | 5 | **Patrones/tácticas a validar** | Circuit Breaker (open/half-open/closed), Retry con backoff exponencial, aislamiento de fallas externas vía ACL. |
 | 6 | **Microservicios involucrados** | **ACL Worker (KYC)**: media las llamadas al proveedor, aplica circuit breaker/retry; comportamiento esperado: abre el circuito tras N fallos consecutivos o tasa de error > X% en una ventana, responde con fallback/estado "en cola" mientras el circuito está abierto, y cierra automáticamente tras la ventana de recuperación si el proveedor vuelve a responder. **Stub KYC**: simula al proveedor real, expone un flag para inyectar latencia alta o errores 5xx bajo demanda. **Suscripción (simplificado)**: consume el resultado del ACL Worker; comportamiento esperado: nunca bloquea indefinidamente, respeta un timeout propio corto y maneja la respuesta "en cola" sin error visible al usuario. |
 | 7 | **Conectores involucrados** | HTTP/REST síncrono ACL Worker → Stub KYC (envuelto por el circuit breaker); HTTP/REST interno Suscripción → ACL Worker (con timeout acotado). Comportamiento esperado bajo prueba: fail-fast cuando el circuito está abierto, en vez de esperar el timeout completo del proveedor real. |
-| 8 | **Ficha de tecnología** | Runtime del ACL Worker: Node.js/TypeScript (alineado con despliegue en Cloud Run). Librería de circuit breaker: [Opossum](https://github.com/nodeshift/opossum) (o `resilience4j` si el equipo usa JVM). Stub de KYC: servidor Express/WireMock con endpoint configurable de latencia/error. Carga: [k6](https://k6.io/). Contenedores: Docker, para reproducir el modelo de despliegue de Cloud Run. Métricas/dashboards: Prometheus + Grafana locales, o Cloud Monitoring si se despliega en un proyecto GCP de pruebas. |
+| 8 | **Ficha de tecnología** | Runtime del ACL Worker: Node.js/TypeScript (alineado con despliegue en Cloud Run). Librería de circuit breaker: [Opossum](https://github.com/nodeshift/opossum) (o `resilience4j` si el equipo usa JVM). Stub de KYC: servidor Express/WireMock con endpoint configurable de latencia/error. Carga: [k6](https://k6.io/). Contenedores: Docker, para reproducir el modelo de despliegue de Cloud Run. Métricas/dashboards: Prometheus + Grafana locales, o Cloud Monitoring si se despliega en un proyecto GCP de pruebas. **Actualizado 2026-09-13**: la implementación real de las 4 piezas se migró a **Python** (FastAPI como framework HTTP en los 4 servicios, `purgatory` como Circuit Breaker del ACL Worker, RQ sobre Redis para la cola de reconciliación) — ver "Resultados y análisis" abajo para la justificación completa de cada librería. El contrato HTTP, k6 y Docker se mantienen sin cambios frente a lo descrito aquí. |
 | 9 | **Distribución de actividades** | **Frans Taboada** (`f.taboada`, reporter de KAN-31): stub de KYC + inyección de fallas, dado que es quien redactó los criterios de aceptación de la historia de onboarding. *Integrante C (por confirmar)*: ACL Worker con circuit breaker/retry + instrumentación de métricas. *Integrante D (por confirmar)*: guiones de carga en k6 (escenario base vs. escenario con KYC degradado). *Todo el equipo*: revisión de resultados y redacción de conclusiones. |
 
 **Criterios de éxito**: (a) con el circuito abierto, la latencia p95 de Suscripción para solicitudes no dependientes de KYC permanece dentro de +10% de la línea base sin KYC caído; (b) 0 timeouts en cascada observados en Suscripción durante la ventana de falla simulada; (c) el circuito cierra automáticamente dentro de la ventana de recuperación configurada una vez el stub de KYC vuelve a responder sano.
 
 **Criterios de fracaso**: latencia p95 se dispara por encima del umbral, o se observan timeouts/errores propagados hacia Suscripción durante la falla simulada de KYC.
 
-**Resultados y análisis**: ✅ **ejecutado el 2026-09-10**, con las 4 piezas construidas y corriendo de verdad (stub, ACL Worker, consumidor de UNDER, k6). Detalle completo en [`experimento-1-acl-kyc/`](experimento-1-acl-kyc/) (cada pieza documenta su propia verificación en vivo). Resumen:
+**Resultados y análisis**: ✅ **ejecutado el 2026-09-10** (Node.js/TypeScript) y **re-ejecutado el 2026-09-13 tras migrar las 4 piezas a Python** (FastAPI + `purgatory` + RQ), con las 4 piezas construidas y corriendo de verdad (stub, ACL Worker, consumidor de UNDER, k6) en ambos casos. Detalle completo en [`experimento-1-acl-kyc/`](experimento-1-acl-kyc/) (cada pieza documenta su propia verificación en vivo). La migración preservó el contrato HTTP exacto (mismas rutas, códigos de estado, variables de entorno) — los mismos guiones de k6 corrieron sin cambios contra ambas versiones.
+
+### Versión Python (2026-09-13) — vigente
+
+Stack: FastAPI en los 4 servicios HTTP, `purgatory` (`SyncCircuitBreakerFactory`) como Circuit
+Breaker del ACL Worker, RQ (Redis Queue) para la cola de reconciliación diferida del Consolidador
+KYC. Detalle de la decisión de librerías y de un hallazgo real de rendimiento (descarte de
+`pybreaker` por serializar toda ejecución concurrente vía un lock global) en
+[`acl-worker/README.md`](experimento-1-acl-kyc/acl-worker/README.md).
+
+- **Aislado (ACL Worker + stub, sin UNDER ni k6)**: con el proveedor sano, `aprobado` en ~304-375ms, circuito `closed`. Con el proveedor en `pending-forever`, las llamadas consecutivas tardan ~3.1s (agotan el umbral T + 1 reintento) y resultan en `degradado`; tras 3 fallos consecutivos el circuito abre y las llamadas siguientes responden **fail-fast en 0-1ms** de `duracionMs` interno (45-56ms de ida y vuelta de red). Al volver el proveedor a sano, el circuito transiciona solo `open → half-open → closed` (~5-6s después de abrir) y la siguiente llamada resuelve en ~304-375ms. Verificado además que 8 llamadas concurrentes directas contra el ACL Worker en modo sano resuelven en 360-675ms cada una (verdaderamente en paralelo, no serializadas).
+- **Carga real con k6 contra el stack completo** (`baseline.js`, 8 VUs/30s, 336 requests, 0% fallos; `falla-inyectada.js`, 60s con ventana caída t=15s→45s, 627 requests, 0% `http_req_failed`):
+
+  | Escenario | `con-kyc` p95 | `sin-kyc` p95 |
+  |---|---|---|
+  | Baseline (KYC sano) | 608.6 ms | 48.6 ms |
+  | Falla inyectada (KYC caído 15-45s) | 3.1 s | **49.7 ms** |
+
+**Veredicto contra los 3 criterios de éxito (versión Python)**:
+- (a) ✅ `sin-kyc` p95 prácticamente idéntico entre baseline y falla (49.7ms vs 48.6ms, muy por debajo de +10%) — las suscripciones no dependientes de KYC no se ven afectadas.
+- (b) ✅ 0% de requests fallidos (`http_req_failed`) en ambas corridas (336/336 y 627/627 checks OK) — ningún timeout/error propagado hacia Suscripción; `con-kyc` siempre responde 200 (aprobado/rechazado/degradado), nunca 5xx.
+- (c) ✅ el circuito cerró automáticamente al final de la corrida de falla inyectada, sin intervención manual, tanto en la verificación aislada como en la corrida de k6 de extremo a extremo.
+
+Ningún criterio de fracaso se disparó. Los números son prácticamente idénticos a los de la versión Node original (ver abajo), confirmando que la migración de lenguaje no alteró el comportamiento observable del experimento una vez resuelto el hallazgo de `pybreaker`.
+
+### Versión Node.js/TypeScript (2026-09-10) — histórica, reemplazada por la versión Python
 
 - **Aislado (ACL Worker + stub, sin UNDER ni k6)**: con el proveedor sano, `aprobado` en 490ms, circuito `closed`. Con el proveedor en `pending-forever`, las 2 primeras llamadas tardan ~3.1s (agotan el umbral T + 1 reintento) y resultan en `degradado`; al tercer `fire` el circuito abre y las llamadas siguientes responden **fail-fast en 0-1ms**. Al volver el proveedor a sano, el circuito transiciona solo `open → half-open → closed` (~5s después de abrir) y la siguiente llamada resuelve en 465ms.
 - **Carga real con k6 contra el stack completo** (`baseline.js`, 8 VUs/30s, 330 requests, 0% fallos; `falla-inyectada.js`, 60s con ventana caída t=15s→45s, 515 requests, 0% `http_req_failed`):
@@ -85,14 +110,11 @@ Aplicando la regla práctica de la guía del curso (*"¿esto ya lo probó toda l
   | Baseline (KYC sano) | 616.6 ms | 50.8 ms |
   | Falla inyectada (KYC caído 15-45s) | 3.1 s | **49.6 ms** |
 
-**Veredicto contra los 3 criterios de éxito**:
-- (a) ✅ `sin-kyc` p95 prácticamente idéntico entre baseline y falla (49.6ms vs 50.8ms, muy por debajo de +10%) — las suscripciones no dependientes de KYC no se ven afectadas.
-- (b) ✅ 0% de requests fallidos (`http_req_failed`) en ambas corridas — ningún timeout/error propagado hacia Suscripción; `con-kyc` siempre responde 200 (aprobado/rechazado/degradado), nunca 5xx.
-- (c) ✅ el circuito cerró automáticamente al final de la corrida de falla inyectada, sin intervención manual, tanto en la verificación aislada como en la corrida de k6 de extremo a extremo.
+Los 3 criterios de éxito también se cumplieron en esta versión (mismo análisis que arriba). Se conserva esta sección solo como referencia histórica de la implementación original en Node.js/TypeScript — el código de esta versión ya no vive en el repo (reemplazado por Python), pero los números quedan documentados para trazabilidad.
 
-Ningún criterio de fracaso se disparó. Pendiente (no bloqueante): calibrar `KYC_TIMEOUT_MS` y los parámetros del Circuit Breaker contra un SLA numérico real (hoy son valores de referencia, documentados como tales en `acl-worker/README.md`) — ver checklist.
+Pendiente (no bloqueante, aplica a ambas versiones): calibrar `KYC_TIMEOUT_MS` y los parámetros del Circuit Breaker contra un SLA numérico real (hoy son valores de referencia, documentados como tales en `acl-worker/README.md`) — ver checklist.
 
-**Amenazas a la validez**: el stub de KYC no replica exactamente la variabilidad de latencia/errores del proveedor real; el experimento corre en un entorno reducido (sin el resto de microservicios reales compitiendo por recursos), por lo que la latencia base puede no ser representativa del entorno productivo con toda la carga concurrente de Solventa.
+**Amenazas a la validez**: el stub de KYC no replica exactamente la variabilidad de latencia/errores del proveedor real; el experimento corre en un entorno reducido (sin el resto de microservicios reales compitiendo por recursos), por lo que la latencia base puede no ser representativa del entorno productivo con toda la carga concurrente de Solventa. Adicionalmente, `purgatory` (la librería de Circuit Breaker de la versión Python) no protege sus contadores internos contra condiciones de carrera bajo concurrencia muy alta (no usa locks, a diferencia de `pybreaker`/`opossum`) — no se observó como problema a la escala de este experimento (8 VUs), pero es una limitación conocida de la elección, documentada en `acl-worker/README.md`.
 
 ### Refinamiento de diseño: contrato del stub y arquitectura interna del ACL Worker
 
@@ -122,7 +144,7 @@ Decisión del equipo (post-ejecución inicial): agregar una **quinta pieza**, el
 **Contrato exacto** (fuente de verdad para el código):
 
 1. **Disparo**: cada vez que `ServicioVerificacion` (dentro del ACL Worker) resuelve una llamada como `degradado` (timeout interno o circuito abierto), además de responder a UNDER, **encola** (fire-and-forget, no bloquea la respuesta) un job `{ clienteId, timestamp }` en una cola `kyc-reconciliacion`.
-2. **Tecnología de la cola**: BullMQ sobre Redis (el mismo Redis que ya está en el diseño para el valor por defecto) — evita introducir un broker nuevo (Pub/Sub, RabbitMQ) solo para este experimento, y da reintentos con backoff y un "failed set" (equivalente a una DLQ) sin código adicional.
+2. **Tecnología de la cola**: BullMQ sobre Redis (el mismo Redis que ya está en el diseño para el valor por defecto) — evita introducir un broker nuevo (Pub/Sub, RabbitMQ) solo para este experimento, y da reintentos con backoff y un "failed set" (equivalente a una DLQ) sin código adicional. **Actualizado 2026-09-13**: al migrar la implementación a Python se reemplazó BullMQ por **RQ (Redis Queue)** — mismo Redis, mismos reintentos con backoff, y su `FailedJobRegistry` cumple el rol de "failed set"/DLQ — ver "Decisión sobre la librería de cola" en `acl-worker/README.md`.
 3. **Consolidador KYC** (nuevo servicio, sin hexagonal — es andamiaje de reconciliación, no el ACL boundary): consume `kyc-reconciliacion`, y por cada job **vuelve a llamar al ACL Worker** (`POST /verificaciones/kyc`), nunca al proveedor KYC directo — el ACL Worker sigue siendo el único punto de salida hacia proveedores externos (principio ACL ya establecido). Si el circuito ya cerró (proveedor recuperado), la llamada resuelve con el estado real.
 4. **Persistencia del resultado**: al resolver (`aprobado`/`rechazado`), el Consolidador escribe `kyc:estado:<clienteId>` en Redis (con TTL) — ese es el "valor consolidado" que UNDER puede leer después.
 5. **Agotamiento de reintentos**: si BullMQ agota los intentos configurados sin que el proveedor se recupere, el job queda en el *failed set* de BullMQ (la DLQ del diagrama) para revisión manual — no se reintenta indefinidamente.
@@ -187,7 +209,8 @@ Para justificar el criterio de estimación que pide el curso (por qué 2 experim
 - [x] Refinar el contrato del stub de KYC del Experimento 1 contra un proveedor real de referencia (Truora) y decidir la arquitectura interna del ACL Worker (hexagonal: puerto `PuertoProveedorIdentidad` + adaptadores `TruoraAdapter`/`StubKycAdapter`)
 - [x] Asignar los 2 nombres reales disponibles en el backlog (Frans Taboada, Daniel Felipe Urrego) a los roles con relación directa a la historia que motiva cada experimento
 - [ ] **Completar los roles restantes (Integrante C/D) con el resto del equipo real** — el backlog no identifica más personas por nombre
-- [ ] **Calibrar los umbrales numéricos (ms, %, lag) contra el SLA/ASR real que el equipo haya definido para Solventa** — el backlog trae criterios cualitativos ("en línea", "inmediato") pero no números; en el Experimento 1 esto queda como `KYC_TIMEOUT_MS`/parámetros de Opossum documentados como valores de referencia en `experimento-1-acl-kyc/acl-worker/README.md`
+- [ ] **Calibrar los umbrales numéricos (ms, %, lag) contra el SLA/ASR real que el equipo haya definido para Solventa** — el backlog trae criterios cualitativos ("en línea", "inmediato") pero no números; en el Experimento 1 esto queda como `KYC_TIMEOUT_MS`/parámetros del Circuit Breaker (`purgatory` desde el 2026-09-13, antes Opossum) documentados como valores de referencia en `experimento-1-acl-kyc/acl-worker/README.md`
 - [x] **Experimento 1 ejecutado** (2026-09-10): 4 piezas construidas y verificadas en vivo (`experimento-1-acl-kyc/`), 3/3 criterios de éxito cumplidos con datos reales de k6 — ver "Resultados y análisis" arriba
+- [x] **Experimento 1 migrado a Python y re-ejecutado** (2026-09-13): las 4 piezas pasaron de Node.js a Python (FastAPI + `purgatory` + RQ); 3/3 criterios de éxito confirmados de nuevo con datos reales de k6 contra el stack Python — ver "Resultados y análisis" arriba
 - [ ] **Experimento 2 pendiente de construir y ejecutar** — el esqueleto de carpeta existe (`experimento-2-replica-riesgo/`) pero sin código aún; es el punto de partida de la próxima sesión
 - [ ] Verificar que el razonamiento de esta sección quede también explicado verbalmente en el video de evidencias (documentado fuera de este repo)
