@@ -48,14 +48,12 @@ resource "google_cloud_run_v2_service" "stub_kyc" {
       ports {
         container_port = 8080
       }
-      env {
-        name  = "PORT"
-        value = "8080"
-      }
+      # PORT es una env var reservada que Cloud Run inyecta solo (= container_port).
+      # stub-kyc ya lee process.env.PORT, así que no hace falta fijarla aquí.
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
     }
@@ -121,7 +119,7 @@ resource "google_cloud_run_v2_service" "acl_worker" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
     }
@@ -167,7 +165,7 @@ resource "google_cloud_run_v2_service" "consumidor_under" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
     }

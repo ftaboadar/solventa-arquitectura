@@ -4,7 +4,9 @@ Terraform que despliega las 3 piezas del Experimento 1 (`stub-kyc`, `acl-worker`
 
 **Por qué esto y no solo Docker Compose local:** correr las pruebas de carga (k6) contra el stack en Cloud Run real es más fiel al entorno de producción de Solventa que un `docker-compose` local — valida el mismo modelo de despliegue (contenedores serverless, cold starts, red entre servicios gestionados) que menciona la ficha de tecnología del experimento. No reemplaza la verificación local ya hecha (documentada en cada README de pieza) — la complementa.
 
-**No cambia el diseño ni el código.** El puerto interno de cada servicio se fija a `8080` (convención de Cloud Run) vía variables de entorno (`PORT`, `ACL_WORKER_PORT`, `UNDER_PORT`) — el código fuente no se toca.
+**No cambia el diseño ni el código.** El puerto interno de cada servicio se fija a `8080` (convención de Cloud Run). Para `acl-worker` y `consumidor-under` se fija vía sus propias env vars (`ACL_WORKER_PORT`, `UNDER_PORT`); `stub-kyc` no necesita ninguna porque ya lee `process.env.PORT`, y `PORT` es un nombre reservado que Cloud Run inyecta solo — fijarlo manualmente hace fallar el despliegue (`400: reserved env names were provided: PORT`).
+
+**Memoria mínima 512Mi.** Con CPU siempre asignada (el default de este Terraform), Cloud Run rechaza límites de memoria por debajo de 512Mi (`Total memory < 512 Mi is not supported with cpu always allocated`).
 
 ## Prerrequisitos
 
@@ -50,6 +52,16 @@ terraform destroy
 ```
 
 Esto borra los 3 servicios de Cloud Run y el repositorio de Artifact Registry (con las imágenes dentro). **No lo ejecutes sin confirmar que ya no necesitas el entorno** — es una acción destructiva sobre infraestructura real, no solo archivos locales.
+
+## Despliegue real ya verificado (2026-09-12)
+
+Las 3 fases se ejecutaron contra `hda-projectt` y los 3 servicios respondieron con el mismo comportamiento ya validado en local (ver `DISENO-EXPERIMENTOS.md`):
+
+- KYC sano: `aprobado` en 581-981ms (incluye red pública + *cold start*, mayor que en local), circuito `closed`.
+- KYC caído (`pending-forever`): 2 llamadas agotan ~3.1s, el circuito abre, las siguientes responden fail-fast (`duracionMs` interno de 14-15ms).
+- Recuperación: el circuito cierra solo tras el `resetTimeout` configurado, sin intervención manual.
+
+Los 3 criterios de éxito del experimento se cumplen igual en Cloud Run que en local.
 
 ## Nota de seguridad (deliberada para este experimento)
 
