@@ -1,0 +1,15 @@
+{
+  "name": "consolidador-kyc",
+  "version": "1.0.0",
+  "description": "Consolidador KYC (reconciliación diferida) para el Experimento 1 de arquitectura de Solventa",
+  "private": true,
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js",
+    "dev": "node --watch src/worker.js"
+  },
+  "dependencies": {
+    "bullmq": "^5.12.0",
+    "ioredis": "^5.4.1"
+  }
+}

@@ -18,6 +18,14 @@ export const config = {
   /** Puerto propio del ACL Worker (el que consumirá el futuro consumidor de UNDER). */
   port: num(process.env.ACL_WORKER_PORT, 5000),
 
+  /**
+   * Redis usado por la cola BullMQ `kyc-reconciliacion` (ver "Extensión de
+   * diseño: Consolidador KYC" en el README de diseño). Mismo Redis que usa
+   * el Consolidador KYC y consumidor-under — no se introduce un broker
+   * nuevo solo para esta pieza aditiva.
+   */
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+
   kyc: {
     /** Adaptador activo: "stub" (default, contra stub-kyc/) o "truora" (real, no probado). */
     provider: proveedor(process.env.KYC_PROVIDER),

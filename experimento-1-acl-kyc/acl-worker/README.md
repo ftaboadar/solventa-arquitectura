@@ -217,9 +217,91 @@ guiones de k6, en una sesión siguiente.
 
 ## Alcance deliberadamente fuera de esta pieza
 
-- No incluye el consumidor simplificado de UNDER (`consumidor-under/`, sesión siguiente).
-- No incluye guiones de carga (`k6/`, sesión siguiente).
-- No hay base de datos, autenticación de usuarios ni UI — no aplican a este experimento.
+- No hay base de datos (más allá de Redis para la cola, ver abajo), autenticación de usuarios ni UI
+  — no aplican a este experimento.
 - `TruoraAdapter.ts` implementa la misma forma de contrato documentada pero **no fue probado contra
   el proveedor real** (no hay credenciales reales de Truora en este curso) — ver la advertencia en
   el propio archivo.
+
+## Extensión: encolado fire-and-forget para el Consolidador KYC
+
+Ver ["Extensión de diseño: Consolidador KYC (reconciliación diferida)"](../../DISENO-EXPERIMENTOS.md#extensión-de-diseño-consolidador-kyc-reconciliación-diferida)
+en el README de diseño — es el contrato exacto que implementa esta sección. Cuando el fallback del
+Circuit Breaker resuelve `degradado` (timeout interno o circuito abierto), además de responder a
+quien llamó, se encola (fire-and-forget) un job `{ clienteId, timestamp }` en la cola BullMQ
+`kyc-reconciliacion`, para que `../consolidador-kyc/` reintente más tarde.
+
+**Módulo**: `src/infra/ColaReconciliacion.ts`. **Enganche**: dentro de `this.breaker.fallback(...)`
+en `ServicioVerificacion.ts` — se llama `encolarReconciliacion(cliente.clienteId)` sin `await`.
+
+- **Librería de cola**: BullMQ sobre Redis (mismo Redis que ya estaba en el diseño para el valor
+  por defecto — no se introduce un broker nuevo). BullMQ requiere `ioredis` como cliente de
+  conexión; se agregó como dependencia directa (no solo transitiva) para tener control explícito de
+  sus opciones (`maxRetriesPerRequest: null`, requerido por BullMQ).
+- **Nunca puede tumbar ni retrasar la respuesta a UNDER**: `encolarReconciliacion` nunca lanza hacia
+  arriba — cualquier fallo (Redis caído, error de conexión) se loguea y se ignora. El listener
+  `connection.on('error', ...)` evita que un error de conexión de ioredis se propague como excepción
+  no capturada y tumbe el proceso.
+- **Política de reintentos del job**: 5 intentos, backoff exponencial con 2000 ms de base
+  (`attempts: 5, backoff: { type: 'exponential', delay: 2000 }`), configurados en `queue.add(...)` —
+  son opciones del job, no del worker que lo consume (`consolidador-kyc/`). Si se agotan, BullMQ
+  mueve el job a su *failed set* automáticamente (la "DLQ" del diagrama); no se construyó nada
+  adicional para eso.
+
+### Bandera técnica `origen` — necesaria para evitar una cadena sin fin de jobs
+
+**Hallazgo real durante la verificación en vivo de esta extensión**: la primera versión encolaba un
+job en *cualquier* resolución `degradado` de `ServicioVerificacion`, sin distinguir si la llamada
+venía de UNDER o del propio `consolidador-kyc` reintentando. Como el Consolidador reintenta contra
+`POST /verificaciones/kyc` — el mismo endpoint, la misma instancia de `ServicioVerificacion` — cada
+reintento suyo que seguía degradado también encolaba un job **nuevo** (además del reintento que
+BullMQ ya programa sobre el job original). Con el circuito abierto (fail-fast en ~1-2 ms), esto
+generó **~95.000 jobs en poco más de un minuto** en la verificación inicial — una cadena sin fin
+acotada solo por la velocidad del fail-fast, no por ningún límite real.
+
+**Corrección aplicada**: `Cliente` (`domain/PuertoProveedorIdentidad.ts`) gana un campo opcional
+`origen?: 'under' | 'consolidador'` — una bandera puramente técnica, no de negocio. El body de
+`POST /verificaciones/kyc` acepta `origen` (default `'under'` si no viene); `consolidador-kyc/`
+siempre envía `origen: 'consolidador'`. El fallback de `ServicioVerificacion` solo llama a
+`encolarReconciliacion` cuando `cliente.origen !== 'consolidador'`. Con la corrección, N llamadas de
+UNDER que resuelven degradado encolan exactamente N jobs — verificado en vivo (ver sección
+siguiente).
+
+## Variables de entorno adicionales (Consolidador KYC)
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `REDIS_URL` | `redis://localhost:6379` | Redis compartido con `consolidador-kyc/` (cola) y `consumidor-under/` (lectura de estado consolidado). |
+
+## Verificación en vivo de la extensión (2026-09-12, con Docker Compose)
+
+Se levantó el stack completo (`docker compose up`, 5 servicios) y se repitió la secuencia de
+verificación original más los pasos nuevos del Consolidador KYC:
+
+1. **Stub `healthy`**: `con-kyc` siguió respondiendo `aprobado` en 322-485 ms (rango consistente con
+   los 490-620 ms ya documentados; variación normal de Docker), `sin-kyc` en 28-49 ms — **sin cambio
+   de comportamiento ni de latencia** por el encolado fire-and-forget.
+2. **Stub `pending-forever`**: 3 llamadas agotaron el timeout (~3.1 s) hasta abrir el circuito;
+   las siguientes fueron fail-fast (4 ms). Cada una de las 5 llamadas encoló exactamente un job
+   (`[acl-worker][cola-reconciliacion] job encolado para clienteId=...`, 5 líneas totales) — **sin
+   la cadena sin fin del hallazgo anterior**. `consolidador-kyc` mostró en sus logs sus propios
+   reintentos contra el ACL Worker resolviendo `kyc_aun_degradado` e incrementando
+   `intento N/5` con backoff exponencial visible entre cada uno.
+3. **Stub de vuelta a `healthy`**: en el intento 5/5 de cada job, `consolidador-kyc` resolvió
+   `aprobado` y escribió `kyc:estado:cliente-paso2` en Redis (confirmado con
+   `redis-cli GET kyc:estado:cliente-paso2` → `{"estado":"aprobado","timestamp":...}`).
+4. **Stub en modo `down`** (falla distinta a la del paso 2) para el mismo `clienteId`: `con-kyc`
+   devolvió `{"estado":"suscripcion_aprobada","kyc":"aprobado","motivo":"kyc_reconciliado_por_consolidador",...}`
+   — el estado consolidado de Redis, **no** el placeholder genérico. Una llamada de control con un
+   `clienteId` nuevo (sin estado consolidado) sí devolvió el placeholder genérico
+   `pendiente_verificacion`, confirmando que ambos caminos coexisten correctamente.
+5. Se confirmó `bull:kyc-reconciliacion:*` acotado (10 claves) durante todo el proceso — sin
+   crecimiento descontrolado — y se detuvo el stack (`docker compose down`) al terminar.
+
+### Conclusión de la extensión
+
+El comportamiento síncrono ya validado del Experimento 1 (criterios de éxito (a)/(b)/(c) del README
+de diseño) **no se vio afectado**: mismas latencias, mismo comportamiento del circuito. La quinta
+pieza demuestra el flujo completo de reconciliación diferida descrito en el diseño: encolado
+fire-and-forget → reintento acotado por BullMQ vía el ACL Worker (nunca al proveedor directo) →
+persistencia del resultado en Redis → lectura por UNDER en el siguiente intento degradado.

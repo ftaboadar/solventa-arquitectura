@@ -27,6 +27,7 @@
  */
 
 const express = require('express');
+const Redis = require('ioredis');
 
 const UNDER_PORT = parseInt(process.env.UNDER_PORT, 10) || 6000;
 const ACL_WORKER_URL = process.env.ACL_WORKER_URL || 'http://localhost:5000';
@@ -37,9 +38,48 @@ const UNDER_HTTP_TIMEOUT_MS = parseInt(process.env.UNDER_HTTP_TIMEOUT_MS, 10) ||
 // Trabajo trivial simulado del flujo sin-KYC, para no responder instantáneo.
 const SIN_KYC_MIN_MS = parseInt(process.env.SIN_KYC_MIN_MS, 10) || 20;
 const SIN_KYC_MAX_MS = parseInt(process.env.SIN_KYC_MAX_MS, 10) || 50;
+// Redis compartido con acl-worker/ (que encola) y consolidador-kyc/ (que
+// escribe kyc:estado:<clienteId>) — ver "Extensión de diseño: Consolidador
+// KYC" en DISENO-EXPERIMENTOS.md.
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Cliente Redis para la lectura síncrona de "estado consolidado" (punto 6
+// del contrato del Consolidador KYC). maxRetriesPerRequest/commandTimeout
+// bajos son deliberados: esta lectura debe ser rápida (~1ms) y NUNCA puede
+// convertirse en el nuevo cuello de botella de con-kyc si Redis está caído
+// — en ese caso simplemente se ignora y se usa el placeholder genérico que
+// ya existía, tal como exige el diseño.
+const redis = new Redis(REDIS_URL, {
+  maxRetriesPerRequest: 1,
+  commandTimeout: 300,
+  retryStrategy: (intento) => Math.min(intento * 500, 5000),
+});
+
+redis.on('error', (error) => {
+  console.error(`[consumidor-under] error de conexión a Redis (no bloqueante): ${error.message}`);
+});
+
+/**
+ * Lee `kyc:estado:<clienteId>` en Redis. Devuelve `null` si no existe o si
+ * la lectura falla (Redis caído, timeout, etc.) — nunca lanza hacia el
+ * llamador: el fallback siempre es el placeholder genérico
+ * `pendiente_verificacion` que ya existía antes del Consolidador KYC.
+ */
+async function leerEstadoConsolidado(clienteId) {
+  try {
+    const crudo = await redis.get(`kyc:estado:${clienteId}`);
+    if (!crudo) return null;
+    return JSON.parse(crudo);
+  } catch (error) {
+    console.error(
+      `[consumidor-under] fallo leyendo estado consolidado de Redis para clienteId=${clienteId} (no bloqueante, se usa el placeholder genérico): ${error.message}`,
+    );
+    return null;
+  }
 }
 
 function randomTrivialWorkMs() {
@@ -86,6 +126,22 @@ app.post('/suscripcion/con-kyc', async (req, res) => {
     const cuerpo = await respuesta.json();
 
     if (cuerpo.estado === 'degradado') {
+      // Extensión "Consolidador KYC" (ver DISENO-EXPERIMENTOS.md): antes de
+      // usar el placeholder genérico, se lee el estado consolidado de un
+      // intento de reconciliación anterior. Lectura rápida y no bloqueante
+      // — si no hay nada (o Redis falla), se cae al comportamiento previo.
+      const estadoConsolidado = await leerEstadoConsolidado(clienteId);
+      if (estadoConsolidado) {
+        return res.status(200).json({
+          estado: estadoConsolidado.estado === 'aprobado' ? 'suscripcion_aprobada' : 'suscripcion_rechazada',
+          kyc: estadoConsolidado.estado,
+          motivo: 'kyc_reconciliado_por_consolidador',
+          mensaje: `Tu verificación de identidad se resolvió en un intento posterior (reconciliada el ${new Date(estadoConsolidado.timestamp).toISOString()}).`,
+          clienteId,
+          duracionMs,
+        });
+      }
+
       return res.status(200).json({
         estado: 'pendiente_verificacion',
         motivo: cuerpo.motivo || 'kyc_no_disponible',

@@ -10,9 +10,26 @@ latencia de solicitudes dependientes de KYC contra las que no dependen de KYC:
 
 | Endpoint | Depende de KYC | Comportamiento |
 |---|---|---|
-| `POST /suscripcion/con-kyc` | Sí | Llama a `POST {ACL_WORKER_URL}/verificaciones/kyc` con un timeout propio corto. Si el ACL Worker responde `degradado`, o si el timeout propio se cumple, responde igual `200` con la suscripción "pendiente de verificación" — nunca un 5xx visible al usuario. |
+| `POST /suscripcion/con-kyc` | Sí | Llama a `POST {ACL_WORKER_URL}/verificaciones/kyc` con un timeout propio corto. Si el ACL Worker responde `degradado`, lee primero `kyc:estado:<clienteId>` en Redis (ver sección "Extensión: lectura del estado consolidado" abajo); si no hay nada, responde `200` con la suscripción "pendiente de verificación" — nunca un 5xx visible al usuario. |
 | `POST /suscripcion/sin-kyc` | No | No toca el ACL Worker. Simula ~20-50 ms de trabajo trivial de suscripción y responde rápido. Es el control del experimento: debe mantenerse dentro de su SLA normal aunque KYC esté caído. |
 | `GET /health` | — | Chequeo simple de vida. |
+
+## Extensión: lectura del estado consolidado (Consolidador KYC)
+
+Ver ["Extensión de diseño: Consolidador KYC (reconciliación diferida)"](../../DISENO-EXPERIMENTOS.md#extensión-de-diseño-consolidador-kyc-reconciliación-diferida),
+punto 6 del contrato. Cuando el ACL Worker responde `degradado`, **antes** de devolver el
+placeholder genérico `pendiente_verificacion`, este consumidor lee `kyc:estado:<clienteId>` en
+Redis (mismo Redis que usan `acl-worker/` y `consolidador-kyc/`). Si existe un estado consolidado
+de un intento de reconciliación anterior (`{estado, timestamp}`), se usa en la respuesta en vez del
+placeholder genérico; si no existe (o la lectura falla), se conserva el comportamiento previo.
+
+- **Cliente Redis**: `ioredis`, el mismo usado en `acl-worker/` y `consolidador-kyc/` por
+  consistencia.
+- **Por qué la lectura no puede convertirse en el nuevo cuello de botella**: se configuró con
+  `maxRetriesPerRequest: 1` y `commandTimeout: 300` ms — si Redis está caído o lento, la lectura
+  falla rápido, se loguea (no bloqueante) y se cae al placeholder genérico. Nunca se espera
+  indefinidamente por Redis.
+- **Nueva variable de entorno**: `REDIS_URL` (default `redis://localhost:6379`).
 
 ## Por qué el timeout propio (`UNDER_HTTP_TIMEOUT_MS`) es 4000 ms por default
 
@@ -29,6 +46,7 @@ acotado: `con-kyc` nunca espera indefinidamente, incluso si el ACL Worker se cue
 | `ACL_WORKER_URL` | `http://localhost:5000` | Base URL del ACL Worker. |
 | `UNDER_HTTP_TIMEOUT_MS` | `4000` | Timeout propio de la llamada a `con-kyc` hacia el ACL Worker. |
 | `SIN_KYC_MIN_MS` / `SIN_KYC_MAX_MS` | `20` / `50` | Rango del trabajo trivial simulado en `sin-kyc`. |
+| `REDIS_URL` | `redis://localhost:6379` | Redis compartido, para leer `kyc:estado:<clienteId>` (ver extensión del Consolidador KYC arriba). |
 
 ## Cómo levantarlo
 

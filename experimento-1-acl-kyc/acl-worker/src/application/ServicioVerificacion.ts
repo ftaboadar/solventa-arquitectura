@@ -1,6 +1,7 @@
 import CircuitBreaker from 'opossum';
 import { Cliente, PuertoProveedorIdentidad, ResultadoVerificacion } from '../domain/PuertoProveedorIdentidad';
 import { config } from '../config';
+import { encolarReconciliacion } from '../infra/ColaReconciliacion';
 
 function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -79,11 +80,26 @@ export class ServicioVerificacion {
     // Fallback: cuando el circuito está abierto o la acción falla (agotó
     // reintentos), se responde "degradado" — nunca un error 5xx crudo hacia
     // el llamador (UNDER).
-    this.breaker.fallback((_cliente: Cliente, error?: Error): ResultadoVerificacion => ({
-      estado: 'degradado',
-      motivo: 'kyc_no_disponible',
-      ...(error ? { detalle: { error: error.message } } : {}),
-    }));
+    //
+    // Extensión "Consolidador KYC" (ver DISENO-EXPERIMENTOS.md): además de
+    // responder degradado, se encola (fire-and-forget, SIN await) un job de
+    // reconciliación diferida. `encolarReconciliacion` ya garantiza por sí
+    // misma que ningún fallo de Redis pueda propagarse hasta aquí — este
+    // fallback nunca deja de devolver su resultado por culpa de la cola.
+    this.breaker.fallback((cliente: Cliente, error?: Error): ResultadoVerificacion => {
+      // No volver a encolar si esta llamada YA es un reintento del
+      // Consolidador KYC (ver el comentario de `origen` en
+      // PuertoProveedorIdentidad.ts) — evita una cadena sin fin de jobs
+      // mientras el circuito siga abierto.
+      if (cliente.origen !== 'consolidador') {
+        encolarReconciliacion(cliente.clienteId);
+      }
+      return {
+        estado: 'degradado',
+        motivo: 'kyc_no_disponible',
+        ...(error ? { detalle: { error: error.message } } : {}),
+      };
+    });
 
     // Transiciones del circuito expuestas a stdout — el criterio de éxito
     // del experimento incluye observar que cierra solo al recuperarse el

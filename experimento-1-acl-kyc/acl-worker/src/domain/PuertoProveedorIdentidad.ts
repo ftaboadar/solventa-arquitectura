@@ -13,6 +13,18 @@
 /** Cliente sobre el que se pide la verificación de identidad/KYC. */
 export interface Cliente {
   clienteId: string;
+  /**
+   * Quién origina esta llamada a /verificaciones/kyc: 'under' (default,
+   * caller normal) o 'consolidador' (el Consolidador KYC reintentando un
+   * job de la cola `kyc-reconciliacion`). NO forma parte del contrato de
+   * negocio — es una bandera puramente técnica para que ServicioVerificacion
+   * nunca vuelva a encolar un job de reconciliación por una llamada que YA
+   * es, en sí misma, un reintento de reconciliación. Sin esta bandera, cada
+   * reintento del Consolidador que sigue degradado encolaría un job nuevo
+   * (además del reintento que BullMQ ya programa sobre el job original),
+   * generando una cadena sin fin de jobs mientras el circuito esté abierto.
+   */
+  origen?: 'under' | 'consolidador';
 }
 
 /**

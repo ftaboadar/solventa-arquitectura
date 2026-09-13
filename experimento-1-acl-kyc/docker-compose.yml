@@ -1,0 +1,81 @@
+# Orquesta las 5 piezas del Experimento 1 (Circuit Breaker/Retry en ACL
+# Worker de KYC + Consolidador KYC de reconciliación diferida). Ver
+# ../DISENO-EXPERIMENTOS.md (Experimento 1 y su sección "Extensión de
+# diseño: Consolidador KYC") para el contrato completo.
+#
+# Uso: docker compose up --build
+#
+# Puertos expuestos al host:
+#   stub-kyc          -> 4000
+#   acl-worker         -> 5000
+#   consumidor-under   -> 6000
+#   consolidador-kyc   -> 7000 (solo /health, no es esencial)
+#   redis              -> 6379
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  stub-kyc:
+    build: ./stub-kyc
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+
+  acl-worker:
+    build: ./acl-worker
+    ports:
+      # 5050 en el host: el 5000 nativo choca con ControlCenter/AirPlay de
+      # macOS (mismo hallazgo ya documentado en acl-worker/README.md). El
+      # puerto interno del contenedor sigue siendo 5000 — los demás
+      # servicios lo llaman como http://acl-worker:5000 en la red interna.
+      - "5050:5000"
+    environment:
+      ACL_WORKER_PORT: "5000"
+      KYC_PROVIDER: stub
+      KYC_BASE_URL: http://stub-kyc:4000
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      stub-kyc:
+        condition: service_started
+
+  consumidor-under:
+    build: ./consumidor-under
+    ports:
+      - "6000:6000"
+    environment:
+      UNDER_PORT: "6000"
+      ACL_WORKER_URL: http://acl-worker:5000
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      acl-worker:
+        condition: service_started
+
+  consolidador-kyc:
+    build: ./consolidador-kyc
+    ports:
+      # 7070 en el host: el 7000 nativo choca con otro proceso local (mismo
+      # tipo de conflicto de puertos de macOS ya visto con el 5000). El
+      # health check no es esencial para el experimento; el puerto interno
+      # del contenedor sigue siendo 7000.
+      - "7070:7000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      ACL_WORKER_URL: http://acl-worker:5000
+    depends_on:
+      redis:
+        condition: service_healthy
+      acl-worker:
+        condition: service_started

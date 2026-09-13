@@ -113,6 +113,35 @@ Esta sección detalla decisiones de diseño discutidas después de la primera re
 
 **Alcance deliberadamente NO hexagonal**: el consumidor simplificado que representa a UNDER (fila 3/6 de la tabla) y el propio stub de KYC son código de un solo uso para el experimento — no llevan esta estructura de puertos/adaptadores. Meterle esa capa sería sobre-ingeniería para piezas que solo existen para generar carga y respuestas simuladas; la hexagonal aplica al ACL Worker real que se lleva a producción, no al andamiaje de prueba.
 
+### Extensión de diseño: Consolidador KYC (reconciliación diferida)
+
+Decisión del equipo (post-ejecución inicial): agregar una **quinta pieza**, el **Consolidador KYC**, que reconcilia en segundo plano los casos que el circuito degradó, sin tocar el camino síncrono ya validado arriba. Esto **no reemplaza ni relaja** la regla ya establecida ("UNDER → ACL sigue siendo síncrona, no hay Pub/Sub aquí") — la agrega como un segundo carril, puramente para des-envejecer el estado cuando el proveedor se recupera.
+
+**Punto de sensibilidad adicional**: cuando el Circuit Breaker degrada una verificación, hoy esa decisión queda "congelada" — UNDER nunca se entera si el cliente, en realidad, sí pasaba KYC una vez el proveedor volvió a responder. El Consolidador resuelve eso sin bloquear a nadie.
+
+**Contrato exacto** (fuente de verdad para el código):
+
+1. **Disparo**: cada vez que `ServicioVerificacion` (dentro del ACL Worker) resuelve una llamada como `degradado` (timeout interno o circuito abierto), además de responder a UNDER, **encola** (fire-and-forget, no bloquea la respuesta) un job `{ clienteId, timestamp }` en una cola `kyc-reconciliacion`.
+2. **Tecnología de la cola**: BullMQ sobre Redis (el mismo Redis que ya está en el diseño para el valor por defecto) — evita introducir un broker nuevo (Pub/Sub, RabbitMQ) solo para este experimento, y da reintentos con backoff y un "failed set" (equivalente a una DLQ) sin código adicional.
+3. **Consolidador KYC** (nuevo servicio, sin hexagonal — es andamiaje de reconciliación, no el ACL boundary): consume `kyc-reconciliacion`, y por cada job **vuelve a llamar al ACL Worker** (`POST /verificaciones/kyc`), nunca al proveedor KYC directo — el ACL Worker sigue siendo el único punto de salida hacia proveedores externos (principio ACL ya establecido). Si el circuito ya cerró (proveedor recuperado), la llamada resuelve con el estado real.
+4. **Persistencia del resultado**: al resolver (`aprobado`/`rechazado`), el Consolidador escribe `kyc:estado:<clienteId>` en Redis (con TTL) — ese es el "valor consolidado" que UNDER puede leer después.
+5. **Agotamiento de reintentos**: si BullMQ agota los intentos configurados sin que el proveedor se recupere, el job queda en el *failed set* de BullMQ (la DLQ del diagrama) para revisión manual — no se reintenta indefinidamente.
+6. **Lectura por UNDER**: cuando el ACL Worker responde `degradado`, UNDER lee `kyc:estado:<clienteId>` en Redis (síncrono, ~1ms) **antes** de decidir qué mostrar — si ya hay un estado consolidado de un intento anterior, lo usa; si no, usa el placeholder neutro `pendiente_verificacion` que ya existía.
+
+**Decisión de negocio que esto deja explícita** (no resuelta aquí, señalada para que no se pierda): si UNDER ya emitió una póliza con `pendiente_verificacion` y el Consolidador después resuelve `rechazado`, hace falta un flujo de reversión/revisión — eso es una decisión de producto/riesgo, no de arquitectura, y queda **fuera de alcance de este experimento**.
+
+**Correspondencia con el diagrama de componentes** (`Experimento_Modelo_Componentes-*.drawio`, fuera de este repo):
+
+| Arista | Naturaleza | Ya corregida a |
+|---|---|---|
+| ACL Workers → Cola | async, dispara al degradar | punteada, etiqueta "Encola al degradar (async)" |
+| Cola → Consolidador | async, consumo | punteada, etiqueta "Consume" |
+| Consolidador → ACL Workers | síncrono, reintento | continua, etiqueta "Reintenta verificación (REST, vía ACL)" |
+| Consolidador → Redis | síncrono, escritura | continua, etiqueta "Actualiza estado consolidado" |
+| UNDER → Redis | síncrono, lectura | continua, etiqueta "Lee estado consolidado" (reemplaza la etiqueta genérica "lee valor por defecto") |
+
+La arista suelta `ACL Workers → Redis` directa (sin pasar por el Consolidador) que había quedado en el diagrama se elimina — no tiene contrato definido y duplicaba el camino real.
+
 ---
 
 ## Experimento 2 — Ventana de consistencia eventual de la réplica de lectura de Riesgo bajo carga concurrente

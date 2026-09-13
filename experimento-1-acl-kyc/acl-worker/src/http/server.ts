@@ -35,14 +35,21 @@ app.use(express.json());
  * esperando indefinidamente ni propaga el detalle del polling interno.
  */
 app.post('/verificaciones/kyc', async (req, res) => {
-  const { clienteId } = req.body ?? {};
+  const { clienteId, origen } = req.body ?? {};
   if (!clienteId || typeof clienteId !== 'string') {
     return res.status(400).json({ error: 'bad_request', message: 'clienteId (string) es obligatorio en el body' });
   }
 
+  // `origen: 'consolidador'` es una bandera puramente técnica (no forma
+  // parte del contrato de negocio) que evita que un reintento del
+  // Consolidador KYC vuelva a encolar un job — ver el comentario en
+  // domain/PuertoProveedorIdentidad.ts. Cualquier otro valor (o ausente,
+  // caso de UNDER) se trata como 'under'.
+  const clienteConOrigen = { clienteId, origen: origen === 'consolidador' ? ('consolidador' as const) : ('under' as const) };
+
   const inicio = Date.now();
   try {
-    const resultado = await servicioVerificacion.verificarCliente({ clienteId });
+    const resultado = await servicioVerificacion.verificarCliente(clienteConOrigen);
     return res.status(200).json({ ...resultado, duracionMs: Date.now() - inicio });
   } catch (error) {
     // Red de seguridad: el fallback de opossum ya debería cubrir todo fallo
